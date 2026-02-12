@@ -706,9 +706,9 @@ for region in regions:
 
     stats_html += f"""
         <div style="margin-bottom: 30px;">
-            <h3 style="color: #555; font-size: 1.1rem; margin-bottom: 10px;">
+            <h3 style="color: black; font-size: 1.1rem; margin-bottom: 10px;">
                 {region} 
-                <span style="font-size: 0.9rem; color: #777;">
+                <span style="font-size: 0.9rem; color: black;">
                     ({turnout_pct:.1f}% of district turnout, {num_precincts} precincts)
                 </span>
             </h3>
@@ -838,44 +838,149 @@ full_html = f"""
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=0.6">
     <title>IL-09 Democratic Primary Prediction Model</title>
+
     <style>
-        body {{
+        * {{
             margin: 0;
             padding: 0;
-            font-family: Arial, sans-serif;
-            background-color: #f5f5f5;
-        }}
-        #map-container {{
-            width: 100%;
-            background-color: white;
+            box-sizing: border-box;
         }}
 
-        /* Mobile-specific adjustments */
-        @media (max-width: 768px) {{
-            h2 {{
-                font-size: 1rem !important;
-            }}
-            h3 {{
-                font-size: 0.9rem !important;
-            }}
-            table {{
-                font-size: 0.75rem !important;
-            }}
-            th, td {{
-                padding: 4px 2px !important;
-            }}
+        body {{
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+        }}
+
+        body::before {{
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image:
+                repeating-linear-gradient(
+                    45deg,
+                    transparent,
+                    transparent 35px,
+                    rgba(255,255,255,.03) 35px,
+                    rgba(255,255,255,.03) 70px
+                );
+            pointer-events: none;
+            z-index: 0;
+        }}
+
+        /* NAV BAR */
+        nav {{
+            background-color: rgba(51, 51, 51, 0.95);
+            padding: 15px 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            position: relative;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }}
+
+        .nav-container {{
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }}
+
+        .nav-title {{
+            color: white;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }}
+
+        .nav-button {{
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: bold;
+        }}
+
+        /* MAIN CONTAINER */
+        .container {{
+            max-width: 1400px;
+            margin: 40px auto;
+            padding: 20px;
+            position: relative;
+            z-index: 1;
+        }}
+        
+
+        
+
+        .hero-section {{
+            background: rgba(255,255,255,0.95);
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            backdrop-filter: blur(10px);
+        }}
+
+
+        .hero-section h1 {{
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }}
+
+        #map-div {{
+            height: 800px;
+        }}
+
+        footer {{
+            background-color: rgba(51,51,51,0.95);
+            color: white;
+            text-align: center;
+            padding: 20px;
+            margin-top: 50px;
         }}
     </style>
 </head>
-<body>
-    <div id="map-container">
-        {plotly_html}
-    </div>
-    {stats_html}
-</body>
 
+<body>
+
+<!-- NAV -->
+<nav>
+    <div class="nav-container">
+        <div class="nav-title">Cole's Election Models</div>
+        <a href="index.html" class="nav-button">Home</a>
+    </div>
+</nav>
+
+<!-- MAIN -->
+<div class="container">
+    <div class="hero-section">
+        <h1>IL-09 Democratic Primary Model</h1>
+
+        <div id="map-container">
+            {plotly_html}
+        </div>
+
+    </div>
+</div>
+
+<!-- STATS -->
+{stats_html}
+
+<footer>
+    &copy; 2026 Cole's Election Models | Data-Driven Political Analysis
+</footer>
+
+</body>
 </html>
 """
+
 
 with open(OUTPUT_HTML, 'w', encoding='utf-8') as f:
     f.write(full_html)
