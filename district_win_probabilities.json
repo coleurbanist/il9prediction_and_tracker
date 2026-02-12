@@ -1,0 +1,30 @@
+{
+  "win_probabilities": {
+    "Fine": 33.4097,
+    "Biss": 55.6289,
+    "Abughazaleh": 9.5157,
+    "Simmons": 0.7992000000000001,
+    "Amiwala": 0.2254,
+    "Andrew": 0.22569999999999998,
+    "Huynh": 0.0929
+  },
+  "median_results": {
+    "Fine": 25.045881143997974,
+    "Biss": 28.21155013761102,
+    "Abughazaleh": 18.550943722528245,
+    "Simmons": 8.107611388349863,
+    "Amiwala": 4.964315504506598,
+    "Andrew": 4.937979609092039,
+    "Huynh": 2.9104780892161375
+  },
+  "simulation_wins": {
+    "Fine": 334097,
+    "Biss": 556289,
+    "Abughazaleh": 95157,
+    "Simmons": 7992,
+    "Amiwala": 2254,
+    "Andrew": 2257,
+    "Huynh": 929,
+    "Other_Breakout": 1025
+  }
+}
