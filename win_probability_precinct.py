@@ -2,6 +2,9 @@ import pandas as pd
 import numpy as np
 import json
 from typing import Dict
+import geopandas as gpd
+from datetime import datetime
+import shutil
 
 # ============================================================================
 # CONFIGURATION
@@ -17,6 +20,9 @@ MOE_PRECINCT = 6.0
 # Biss incumbency penalty in Evanston
 BISS_EVANSTON_UNDECIDED_PENALTY = 0.65  # Undecideds 35% less likely to break for him
 
+# File paths
+SHAPEFILE_PATH = 'data/shapefile/IL24/IL24.shp'
+CONGRESSIONAL_DISTRICTS_PATH = 'data/shapefile/congressional_districts.shp'
 INPUT_CSV = 'data/csv_data/expectations/IL_09_precinct_probabilities.csv'
 OUTPUT_CSV = 'data/csv_data/expectations/IL_09_precinct_probabilities.csv'
 POLL_BASELINE_FILE = 'poll_baseline.json'
@@ -24,12 +30,143 @@ DISTRICT_RESULTS_FILE = 'district_win_probabilities.json'
 
 
 # ============================================================================
-# LOAD DATA
+# STEP 0: ADJUST TURNOUT BASED ON IL-09 CLIPPING
 # ============================================================================
 
-# Add this import at the top with the other imports
-from datetime import datetime
-import shutil
+def adjust_turnout_for_district_boundary(df):
+    """
+    Adjust precinct turnout based on how much of each precinct is within IL-09.
+    Returns updated dataframe with adjusted turnout.
+    """
+    print("\n" + "=" * 70)
+    print("STEP 0: ADJUSTING TURNOUT FOR IL-09 BOUNDARY CLIPPING")
+    print("=" * 70)
+
+    try:
+        # Load shapefiles
+        print("\nLoading shapefiles...")
+        gdf = gpd.read_file(SHAPEFILE_PATH)
+        print(f"✓ Loaded {len(gdf)} precincts from shapefile")
+
+        gdf_congress = gpd.read_file(CONGRESSIONAL_DISTRICTS_PATH)
+        print(f"✓ Loaded {len(gdf_congress)} congressional districts")
+
+        # Ensure CRS matches
+        if gdf_congress.crs is None:
+            gdf_congress = gdf_congress.set_crs(epsg=4326)
+        if gdf.crs is None:
+            gdf = gdf.set_crs(epsg=4326)
+        if gdf_congress.crs != gdf.crs:
+            gdf_congress = gdf_congress.to_crs(gdf.crs)
+
+        # Find district column
+        district_col = None
+        for col in ['DISTRICT', 'CD', 'CONG_DIST', 'DIST_NUM', 'NAME', 'NAMELSAD']:
+            if col in gdf_congress.columns:
+                district_col = col
+                break
+
+        if district_col is None:
+            print("⚠ Could not identify district column, skipping turnout adjustment")
+            return df
+
+        print(f"Using column '{district_col}' to identify districts")
+
+        # Find IL-09
+        il09_mask = (
+                (gdf_congress[district_col] == '09') |
+                (gdf_congress[district_col] == '9') |
+                (gdf_congress[district_col] == 9) |
+                (gdf_congress[district_col].astype(str).str.contains('09', na=False)) |
+                (gdf_congress[district_col].astype(str).str.contains('9', na=False))
+        )
+
+        if il09_mask.sum() == 0:
+            print("⚠ Could not find district 9, skipping turnout adjustment")
+            return df
+
+        il09_boundary = gdf_congress[il09_mask].copy()
+        il09_geom = il09_boundary.geometry.unary_union
+        print(f"✓ Found IL-09 district")
+
+        # Calculate area adjustments
+        print("\nCalculating area-based adjustments...")
+        gdf_area_calc = gdf.to_crs(epsg=3857)  # Project to meters
+        il09_geom_projected = gpd.GeoSeries([il09_geom], crs=gdf.crs).to_crs(epsg=3857)[0]
+
+        gdf_area_calc['original_area'] = gdf_area_calc.geometry.area
+        gdf_area_calc['geometry'] = gdf_area_calc.geometry.intersection(il09_geom_projected)
+        gdf_area_calc['clipped_area'] = gdf_area_calc.geometry.area
+        gdf_area_calc['area_pct_retained'] = (gdf_area_calc['clipped_area'] / gdf_area_calc['original_area']) * 100
+        gdf_area_calc['area_pct_retained'] = gdf_area_calc['area_pct_retained'].fillna(0)
+
+        # Create lookup dictionary
+        area_adjustments = {}
+        for idx, row in gdf_area_calc.iterrows():
+            joinfield = row['JoinField']
+            pct_retained = row['area_pct_retained']
+            area_adjustments[joinfield.upper()] = pct_retained / 100
+
+        # Report statistics
+        fully_inside = (gdf_area_calc['area_pct_retained'] > 99).sum()
+        partially_clipped = (
+                    (gdf_area_calc['area_pct_retained'] > 0) & (gdf_area_calc['area_pct_retained'] <= 99)).sum()
+        fully_outside = (gdf_area_calc['area_pct_retained'] == 0).sum()
+
+        print(f"  Precincts fully inside IL-09: {fully_inside}")
+        print(f"  Precincts partially clipped: {partially_clipped}")
+        print(f"  Precincts fully outside IL-09: {fully_outside}")
+
+        # Apply adjustments to CSV data
+        print("\nApplying turnout adjustments to CSV data...")
+        original_total_turnout = df['estimated_turnout'].sum()
+
+        df['original_estimated_turnout'] = df['estimated_turnout']
+        df['area_adjustment_factor'] = 1.0
+
+        for idx, row in df.iterrows():
+            # Try multiple join fields
+            joinfield = None
+            for col in ['JoinField', 'JoinField2', 'JoinFieldAlt']:
+                if col in df.columns and pd.notna(row[col]):
+                    test_key = str(row[col]).upper()
+                    if test_key in area_adjustments:
+                        joinfield = test_key
+                        break
+
+            if joinfield:
+                adjustment_factor = area_adjustments[joinfield]
+                df.loc[idx, 'area_adjustment_factor'] = adjustment_factor
+                df.loc[idx, 'estimated_turnout'] = round(row['estimated_turnout'] * adjustment_factor)
+
+        adjusted_total_turnout = df['estimated_turnout'].sum()
+        turnout_lost = original_total_turnout - adjusted_total_turnout
+
+        print(f"\n  Original total turnout: {original_total_turnout:,.0f}")
+        print(f"  Adjusted total turnout: {adjusted_total_turnout:,.0f}")
+        print(f"  Turnout lost: {turnout_lost:,.0f} ({turnout_lost / original_total_turnout * 100:.2f}%)")
+
+        # Show significant adjustments
+        significant = df[df['area_adjustment_factor'] < 0.99]
+        if len(significant) > 0:
+            print(f"\n  Precincts with significant turnout adjustments:")
+            for idx, row in significant.head(10).iterrows():
+                precinct_name = row.get('precinct_name', row.get('JoinField', 'Unknown'))
+                orig = row['original_estimated_turnout']
+                adj = row['estimated_turnout']
+                factor = row['area_adjustment_factor']
+                print(f"    {precinct_name}: {orig:,.0f} → {adj:,.0f} ({factor * 100:.1f}% retained)")
+
+            if len(significant) > 10:
+                print(f"    ... and {len(significant) - 10} more")
+
+        print("\n✓ Turnout adjustment complete")
+        return df
+
+    except Exception as e:
+        print(f"\n⚠ Error adjusting turnout: {e}")
+        print("Continuing without turnout adjustment...")
+        return df
 
 
 # ============================================================================
@@ -38,7 +175,9 @@ import shutil
 
 def load_data():
     """Load all necessary data files"""
-    print("Loading data...")
+    print("\n" + "=" * 70)
+    print("LOADING DATA")
+    print("=" * 70)
 
     df = pd.read_csv(INPUT_CSV)
 
@@ -67,6 +206,7 @@ def load_data():
 
     return df, baseline_avg, target_median, avg_moe, scaled_crosstabs, crosstab_moes
 
+
 # ============================================================================
 # CROSSTAB HELPER FUNCTIONS
 # ============================================================================
@@ -75,20 +215,10 @@ def map_age_to_crosstab(median_age, crosstabs):
     """
     Map precinct median age to crosstab age buckets with interpolation.
     """
-    # Age bucket definitions (name, min, max, midpoint)
-    buckets = [
-        ('age_18-29', 18, 29, 23.5),
-        ('age_30-44', 30, 44, 37),
-        ('age_45-65', 45, 65, 55),
-        ('age_65+', 65, 100, 72.5)
-    ]
-
-
     if median_age < 30:
         return crosstabs.get('age_18-29', 0)
     if median_age >= 65:
         return crosstabs.get('age_65+', 0)
-
 
     if 30 <= median_age < 45:
         lower = crosstabs.get('age_30-44', 0)
@@ -106,13 +236,15 @@ def map_age_to_crosstab(median_age, crosstabs):
 # ============================================================================
 # STEP 1: APPLY CROSSTAB-BASED DEMOGRAPHIC MODELING
 # ============================================================================
-# In the apply_crosstab_modeling function, update the Biss Evanston boost:
+
 def apply_crosstab_modeling(df, baseline_avg, scaled_crosstabs):
     """
     Apply crosstab-based demographic modeling to estimate precinct-level support.
     Uses ideology, age, and racial composition from crosstabs.
     """
-    print("\nApplying crosstab-based demographic modeling...")
+    print("\n" + "=" * 70)
+    print("STEP 1: CROSSTAB-BASED DEMOGRAPHIC MODELING")
+    print("=" * 70)
 
     # Define ideology thresholds (divide into thirds)
     prog_scores = df['prog_score_imputed'].dropna()
@@ -123,7 +255,7 @@ def apply_crosstab_modeling(df, baseline_avg, scaled_crosstabs):
         moderate_threshold = -0.3
         somewhat_lib_threshold = 0.3
 
-    print(f"Ideology thresholds:")
+    print(f"\nIdeology thresholds:")
     print(f"  Moderate: <= {moderate_threshold:.3f}")
     print(f"  Somewhat Liberal: {moderate_threshold:.3f} to {somewhat_lib_threshold:.3f}")
     print(f"  Very Liberal: > {somewhat_lib_threshold:.3f}")
@@ -175,10 +307,8 @@ def apply_crosstab_modeling(df, baseline_avg, scaled_crosstabs):
                 if 'black' in crosstabs:
                     black_support = crosstabs['black']
                 else:
-                    # Heuristics for candidates without Black crosstabs
                     if cand == 'Simmons':
                         black_support = white_support * 3.0 if white_support > 0 else district_avg * 3.0
-
                     else:
                         black_support = white_support if white_support > 0 else district_avg
 
@@ -224,10 +354,7 @@ def apply_crosstab_modeling(df, baseline_avg, scaled_crosstabs):
         else:
             biss_evanston_multiplier = 2.5
 
-        # Cap the multiplier at something reasonable
         biss_evanston_multiplier = min(biss_evanston_multiplier, 3.5)
-        #this is so high because I think he will get about 40% in Evanston and this gets the numbers close
-        #this could be one of my boldest and most incorrect assumptions.
 
         print(f"\nApplying Evanston hometown boost for Biss:")
         print(f"  {evanston_mask.sum()} Evanston precincts")
@@ -240,14 +367,10 @@ def apply_crosstab_modeling(df, baseline_avg, scaled_crosstabs):
         new_biss_evanston = df.loc[evanston_mask, 'raw_Biss'].mean()
         print(f"  New avg support: {new_biss_evanston:.1f}%")
 
-    # Special boost for Abughazaleh in Chicago because I suspect she will do better in Chicago
-    # She gets local recognition boost, but smaller than Biss
+    # Special boost for Abughazaleh in Chicago
     chicago_mask = df['in_chicago'] == 1
     if chicago_mask.sum() > 0:
         current_kat_chicago = df.loc[chicago_mask, 'raw_Abughazaleh'].mean()
-
-        # i suspect this boost will be less for kat than Biss has in Evanston
-
         kat_chicago_multiplier = 1.175
 
         print(f"\nApplying Chicago local boost for Abughazaleh:")
@@ -259,70 +382,59 @@ def apply_crosstab_modeling(df, baseline_avg, scaled_crosstabs):
 
         new_kat_chicago = df.loc[chicago_mask, 'raw_Abughazaleh'].mean()
         print(f"  New avg support: {new_kat_chicago:.1f}%")
-        print(f"  Absolute boost: +{new_kat_chicago - current_kat_chicago:.1f} percentage points")
 
-        # 3. SIMMONS & HUYNH: Chicago local boosts
-        if chicago_mask.sum() > 0:
-            for cand in ['Simmons', 'Huynh']:
-                current_support = df.loc[chicago_mask, f'raw_{cand}'].mean()
-                # Apply same local multiplier as Abughazaleh
-                multiplier = 1.5
+    # SIMMONS & HUYNH: Chicago local boosts
+    if chicago_mask.sum() > 0:
+        for cand in ['Simmons', 'Huynh']:
+            current_support = df.loc[chicago_mask, f'raw_{cand}'].mean()
+            multiplier = 1.5
 
-                print(f"\nApplying Chicago local boost for {cand}:")
-                print(f"  Multiplier: {multiplier:.2f}x")
+            print(f"\nApplying Chicago local boost for {cand}:")
+            print(f"  Multiplier: {multiplier:.2f}x")
 
-                df.loc[chicago_mask, f'raw_{cand}'] *= multiplier
+            df.loc[chicago_mask, f'raw_{cand}'] *= multiplier
 
-                new_support = df.loc[chicago_mask, f'raw_{cand}'].mean()
-                print(f"  New avg support: {new_support:.1f}% (+{new_support - current_support:.1f})")
+            new_support = df.loc[chicago_mask, f'raw_{cand}'].mean()
+            print(f"  New avg support: {new_support:.1f}% (+{new_support - current_support:.1f})")
 
-        # 4. AMIWALA: Niles Township Progressive Boost since she is from there
-        township_col = next((col for col in ['Township', 'township', 'Township_Name'] if col in df.columns), None)
+    # AMIWALA: Niles Township Progressive Boost
+    township_col = next((col for col in ['Township', 'township', 'Township_Name'] if col in df.columns), None)
 
-        if township_col:
-            # Filter: Inside Niles Township AND Ideology score > somewhat_liberal threshold
-            niles_mask = df[township_col].astype(str).str.contains('Niles', case=False, na=False)
-            prog_niles_mask = niles_mask & (df['prog_score_imputed'] > somewhat_lib_threshold)
+    if township_col:
+        niles_mask = df[township_col].astype(str).str.contains('Niles', case=False, na=False)
+        prog_niles_mask = niles_mask & (df['prog_score_imputed'] > somewhat_lib_threshold)
 
-            if prog_niles_mask.sum() > 0:
-                current_amiwala = df.loc[prog_niles_mask, 'raw_Amiwala'].mean()
-                # Stronger boost to "pin" these precincts for her
-                amiwala_multiplier = 1.5
+        if prog_niles_mask.sum() > 0:
+            current_amiwala = df.loc[prog_niles_mask, 'raw_Amiwala'].mean()
+            amiwala_multiplier = 1.5
 
-                print(f"\nApplying Progressive/Niles boost for Amiwala:")
-                print(f"  {prog_niles_mask.sum()} target precincts")
-                print(f"  Current avg support: {current_amiwala:.1f}%")
-                print(f"  Multiplier: {amiwala_multiplier:.2f}x")
+            print(f"\nApplying Progressive/Niles boost for Amiwala:")
+            print(f"  {prog_niles_mask.sum()} target precincts")
+            print(f"  Current avg support: {current_amiwala:.1f}%")
+            print(f"  Multiplier: {amiwala_multiplier:.2f}x")
 
-                df.loc[prog_niles_mask, 'raw_Amiwala'] *= amiwala_multiplier
+            df.loc[prog_niles_mask, 'raw_Amiwala'] *= amiwala_multiplier
 
-                new_amiwala = df.loc[prog_niles_mask, 'raw_Amiwala'].mean()
-                print(f"  New avg support: {new_amiwala:.1f}%")
-                # In the apply_crosstab_modeling function, after the Abughazaleh Chicago boost section, add:
+            new_amiwala = df.loc[prog_niles_mask, 'raw_Amiwala'].mean()
+            print(f"  New avg support: {new_amiwala:.1f}%")
 
-                # 5. FINE: Chicago penalty (performs worse in the city)
-                chicago_mask = df['in_chicago'] == 1
-                if chicago_mask.sum() > 0:
-                    current_fine_chicago = df.loc[chicago_mask, 'raw_Fine'].mean()
+    # FINE: Chicago penalty
+    if chicago_mask.sum() > 0:
+        current_fine_chicago = df.loc[chicago_mask, 'raw_Fine'].mean()
+        fine_chicago_penalty = 0.85
 
-                    # Apply penalty - the inverse of what we gave Kat
-                    # Fine does worse in Chicago than her crosstab model predicts
-                    fine_chicago_penalty = 0.85  # 15% penalty (inverse of Kat's 1.175x boost)
+        print(f"\nApplying Chicago penalty for Fine:")
+        print(f"  {chicago_mask.sum()} Chicago precincts")
+        print(f"  Current avg support: {current_fine_chicago:.1f}%")
+        print(f"  Penalty multiplier: {fine_chicago_penalty:.2f}x")
 
-                    print(f"\nApplying Chicago penalty for Fine:")
-                    print(f"  {chicago_mask.sum()} Chicago precincts")
-                    print(f"  Current avg support: {current_fine_chicago:.1f}%")
-                    print(f"  Penalty multiplier: {fine_chicago_penalty:.2f}x")
+        df.loc[chicago_mask, 'raw_Fine'] *= fine_chicago_penalty
 
-                    df.loc[chicago_mask, 'raw_Fine'] *= fine_chicago_penalty
-
-                    new_fine_chicago = df.loc[chicago_mask, 'raw_Fine'].mean()
-                    print(f"  New avg support: {new_fine_chicago:.1f}%")
-                    print(f"  Absolute change: {new_fine_chicago - current_fine_chicago:.1f} percentage points")
-        else:
-            print("\n⚠ Could not apply Amiwala boost: 'Township' column not found in data.")
+        new_fine_chicago = df.loc[chicago_mask, 'raw_Fine'].mean()
+        print(f"  New avg support: {new_fine_chicago:.1f}%")
 
     return df
+
 
 # ============================================================================
 # STEP 2: CALIBRATE TO DISTRICT BASELINE
@@ -331,9 +443,10 @@ def apply_crosstab_modeling(df, baseline_avg, scaled_crosstabs):
 def calibrate_to_baseline(df, baseline_avg, max_iterations=50, tolerance=0.5):
     """
     Calibrate precinct estimates to match district-wide baseline within 0.5 points.
-    Uses additive adjustments to preserve geographic variation.
     """
-    print("\nCalibrating to district baseline...")
+    print("\n" + "=" * 70)
+    print("STEP 2: CALIBRATING TO DISTRICT BASELINE")
+    print("=" * 70)
 
     total_turnout = df['estimated_turnout'].sum()
 
@@ -352,17 +465,17 @@ def calibrate_to_baseline(df, baseline_avg, max_iterations=50, tolerance=0.5):
         max_diff = max(abs(current_avg[cand] - baseline_avg.get(cand, 0)) for cand in CANDIDATES)
 
         if max_diff < tolerance:
-            print(f"  ✓ Converged after {iteration + 1} iterations (max diff: {max_diff:.3f}%)")
+            print(f"✓ Converged after {iteration + 1} iterations (max diff: {max_diff:.3f}%)")
             break
 
-        # Apply ADDITIVE correction (preserves geographic variation)
+        # Apply ADDITIVE correction
         for cand in CANDIDATES:
             diff = baseline_avg.get(cand, 0) - current_avg[cand]
             df[f'adjusted_{cand}'] += diff
             df[f'adjusted_{cand}'] = np.maximum(df[f'adjusted_{cand}'], 0.1)
 
     else:
-        print(f"  ⚠ Did not fully converge after {max_iterations} iterations")
+        print(f"⚠ Did not fully converge after {max_iterations} iterations")
 
     # Print results
     print("\nBaseline Calibration Results:")
@@ -384,11 +497,10 @@ def calibrate_to_baseline(df, baseline_avg, max_iterations=50, tolerance=0.5):
 def allocate_undecideds_crosstab_based(df, scaled_crosstabs, baseline_avg):
     """
     Allocate undecided voters using crosstab-based weights.
-    Applies Biss penalty in Evanston and compensates elsewhere.
-    Mainly because I think undecided voters in Evanston already know Biss and
-    there is a reason they are undecided
     """
-    print("\nAllocating undecided voters using crosstab-based modeling...")
+    print("\n" + "=" * 70)
+    print("STEP 3: ALLOCATING UNDECIDED VOTERS")
+    print("=" * 70)
 
     # Define ideology thresholds
     prog_scores = df['prog_score_imputed'].dropna()
@@ -412,11 +524,11 @@ def allocate_undecideds_crosstab_based(df, scaled_crosstabs, baseline_avg):
         if row.get('in_evanston', 0) == 1:
             evanston_undecided_mass += n_undecided
 
-    print(f"  Total undecided voters: {total_undecided_mass:.0f}")
-    print(f"  Evanston undecided voters: {evanston_undecided_mass:.0f} ({evanston_undecided_mass/total_undecided_mass*100:.1f}%)")
+    print(f"Total undecided voters: {total_undecided_mass:.0f}")
+    print(
+        f"Evanston undecided voters: {evanston_undecided_mass:.0f} ({evanston_undecided_mass / total_undecided_mass * 100:.1f}%)")
 
-    # Calculate Biss compensation factor for non-Evanston precincts
-    # Biss loses votes in Evanston, gains them elsewhere proportionally so that it balances overall
+    # Calculate Biss compensation factor
     biss_evanston_penalty_effect = evanston_undecided_mass * (1 - BISS_EVANSTON_UNDECIDED_PENALTY)
     non_evanston_undecided_mass = total_undecided_mass - evanston_undecided_mass
 
@@ -425,7 +537,7 @@ def allocate_undecideds_crosstab_based(df, scaled_crosstabs, baseline_avg):
     else:
         biss_non_evanston_boost = 1.0
 
-    print(f"  Biss non-Evanston undecided boost: {biss_non_evanston_boost:.3f}x")
+    print(f"Biss non-Evanston undecided boost: {biss_non_evanston_boost:.3f}x")
 
     # Allocate undecideds precinct by precinct
     for idx, row in df.iterrows():
@@ -433,7 +545,6 @@ def allocate_undecideds_crosstab_based(df, scaled_crosstabs, baseline_avg):
         undecided_pct = max(0, 100 - decided_pct)
 
         if undecided_pct == 0:
-            # No undecideds, just copy adjusted to final
             for cand in CANDIDATES:
                 df.loc[idx, f'final_{cand}'] = row[f'adjusted_{cand}']
             continue
@@ -452,13 +563,13 @@ def allocate_undecideds_crosstab_based(df, scaled_crosstabs, baseline_avg):
         if scaled_crosstabs:
             for cand in CANDIDATES:
                 if cand not in scaled_crosstabs:
-                    precinct_undecided_support[cand] = 1.0  # Floor
+                    precinct_undecided_support[cand] = 1.0
                     continue
 
                 crosstabs = scaled_crosstabs[cand]
                 support_components = []
 
-                # 1. Ideology
+                # Ideology
                 if prog_score <= moderate_threshold:
                     ideology_support = crosstabs.get('moderate', 0)
                 elif prog_score <= somewhat_lib_threshold:
@@ -468,11 +579,11 @@ def allocate_undecideds_crosstab_based(df, scaled_crosstabs, baseline_avg):
 
                 support_components.append(ideology_support)
 
-                # 2. Age
+                # Age
                 age_support = map_age_to_crosstab(median_age, crosstabs)
                 support_components.append(age_support)
 
-                # 3. Race/ethnicity
+                # Race/ethnicity
                 white_support = crosstabs.get('white', 0)
 
                 if 'black' in crosstabs:
@@ -480,7 +591,6 @@ def allocate_undecideds_crosstab_based(df, scaled_crosstabs, baseline_avg):
                 else:
                     if cand == 'Simmons':
                         black_support = white_support * 3.0 if white_support > 0 else 15.0
-
                     else:
                         black_support = white_support if white_support > 0 else 5.0
 
@@ -495,29 +605,24 @@ def allocate_undecideds_crosstab_based(df, scaled_crosstabs, baseline_avg):
                         asian_support = white_support * 0.8 if white_support > 0 else 5.0
 
                 racial_support = (
-                    (white_pct / 100) * white_support +
-                    (black_pct / 100) * black_support +
-                    (asian_pct / 100) * asian_support
+                        (white_pct / 100) * white_support +
+                        (black_pct / 100) * black_support +
+                        (asian_pct / 100) * asian_support
                 )
                 support_components.append(racial_support)
 
                 # Average
                 avg_support = np.mean(support_components)
-
-                # Apply floor
                 precinct_undecided_support[cand] = max(avg_support, 1.0)
 
                 # Apply Biss modifiers
                 if cand == 'Biss':
                     if is_evanston:
-                        # Penalty in Evanston
                         precinct_undecided_support[cand] *= BISS_EVANSTON_UNDECIDED_PENALTY
                     else:
-                        # Boost elsewhere
                         precinct_undecided_support[cand] *= biss_non_evanston_boost
 
         else:
-            # Fallback: use current support as proxy
             for cand in CANDIDATES:
                 precinct_undecided_support[cand] = max(row[f'adjusted_{cand}'], 1.0)
 
@@ -527,21 +632,20 @@ def allocate_undecideds_crosstab_based(df, scaled_crosstabs, baseline_avg):
                     else:
                         precinct_undecided_support[cand] *= biss_non_evanston_boost
 
-        # Normalize to sum to 1
+        # Normalize
         total_support = sum(precinct_undecided_support.values())
         if total_support > 0:
             for cand in CANDIDATES:
                 precinct_undecided_support[cand] /= total_support
         else:
-            # Equal split if all zero
             for cand in CANDIDATES:
                 precinct_undecided_support[cand] = 1.0 / len(CANDIDATES)
 
         # Allocate undecideds
         for cand in CANDIDATES:
             df.loc[idx, f'final_{cand}'] = (
-                row[f'adjusted_{cand}'] +
-                undecided_pct * precinct_undecided_support[cand]
+                    row[f'adjusted_{cand}'] +
+                    undecided_pct * precinct_undecided_support[cand]
             )
 
     return df
@@ -553,9 +657,11 @@ def allocate_undecideds_crosstab_based(df, scaled_crosstabs, baseline_avg):
 
 def final_calibrate(df, target_median, max_iterations=50, tolerance=0.5):
     """
-    Calibrate to match district-wide median projection within 0.5 points.
+    Calibrate to match district-wide median projection.
     """
-    print("\nFinal calibration to target median projection...")
+    print("\n" + "=" * 70)
+    print("STEP 4: FINAL CALIBRATION TO TARGET MEDIAN")
+    print("=" * 70)
 
     total_turnout = df['estimated_turnout'].sum()
 
@@ -568,7 +674,7 @@ def final_calibrate(df, target_median, max_iterations=50, tolerance=0.5):
         max_diff = max(abs(current_avg[cand] - target_median.get(cand, 0)) for cand in CANDIDATES)
 
         if max_diff < tolerance:
-            print(f"  ✓ Converged after {iteration + 1} iterations (max diff: {max_diff:.3f}%)")
+            print(f"✓ Converged after {iteration + 1} iterations (max diff: {max_diff:.3f}%)")
             break
 
         # Gentle additive correction
@@ -595,7 +701,9 @@ def final_calibrate(df, target_median, max_iterations=50, tolerance=0.5):
 # ============================================================================
 
 def run_precinct_monte_carlo(df, avg_moe):
-    print(f"\nRunning {N_SIMULATIONS:,} Monte Carlo simulations...")
+    print("\n" + "=" * 70)
+    print(f"STEP 5: RUNNING {N_SIMULATIONS:,} MONTE CARLO SIMULATIONS")
+    print("=" * 70)
 
     n_precincts = len(df)
     n_candidates = len(CANDIDATES)
@@ -637,20 +745,17 @@ def run_precinct_monte_carlo(df, avg_moe):
     winners_idx = np.argmax(simulated_pcts, axis=2)
 
     results = {}
-    results = {}
-    turnout = df['estimated_turnout'].values  # Get turnout array
+    turnout = df['estimated_turnout'].values
 
     for i, cand in enumerate(CANDIDATES):
         wins = (winners_idx == i).sum(axis=0)
         win_prob = wins / N_SIMULATIONS
         median_pct = np.median(simulated_pcts[:, :, i], axis=0) * 100
-
-        # Calculate median votes (rounded to nearest whole number)
         median_votes = np.round(median_pct / 100 * turnout).astype(int)
 
         results[f'win_prob_{cand}'] = win_prob
         results[f'median_pct_{cand}'] = median_pct
-        results[f'median_votes_{cand}'] = median_votes  # ADD THIS LINE
+        results[f'median_votes_{cand}'] = median_votes
 
     for col_name, data in results.items():
         df[col_name] = data
@@ -667,11 +772,14 @@ def run_precinct_monte_carlo(df, avg_moe):
 def main():
     print("=" * 70)
     print("PRECINCT-LEVEL MONTE CARLO SIMULATOR V3")
-    print("With Crosstab-Based Demographic Modeling")
+    print("With IL-09 Boundary Clipping & Crosstab-Based Demographic Modeling")
     print("=" * 70)
 
-    # Load data (this now includes backup creation)
+    # Load data
     df, baseline_avg, target_median, avg_moe, scaled_crosstabs, crosstab_moes = load_data()
+
+    # Step 0: Adjust turnout for IL-09 boundary clipping
+    df = adjust_turnout_for_district_boundary(df)
 
     # Step 1: Apply crosstab-based modeling
     df = apply_crosstab_modeling(df, baseline_avg, scaled_crosstabs)
@@ -679,24 +787,21 @@ def main():
     # Step 2: Calibrate to baseline
     df = calibrate_to_baseline(df, baseline_avg)
 
-    # Step 3: Allocate undecideds with crosstab-based weights
+    # Step 3: Allocate undecideds
     df = allocate_undecideds_crosstab_based(df, scaled_crosstabs, baseline_avg)
 
-    # Step 4: Final calibration to target median
+    # Step 4: Final calibration
     df = final_calibrate(df, target_median)
 
     # Step 5: Monte Carlo simulations
     df = run_precinct_monte_carlo(df, avg_moe)
 
-    # Save full results to original CSV
+    # Save results
     df.to_csv(OUTPUT_CSV, index=False)
     print(f"\n✓ Full results saved to {OUTPUT_CSV}")
 
-    # CREATE SIMPLIFIED OUTPUT CSV
-    # Columns to keep: JoinField, JoinField2, estimated_turnout, + all simulation results
+    # Create simplified output
     simplified_columns = ['JoinField', 'JoinFieldAlt', 'estimated_turnout']
-
-    # Add all candidate-related columns
     for cand in CANDIDATES:
         simplified_columns.extend([
             f'win_prob_{cand}',
@@ -704,22 +809,20 @@ def main():
             f'median_votes_{cand}'
         ])
 
-    # Filter to only columns that exist in the dataframe
     available_columns = [col for col in simplified_columns if col in df.columns]
     df_simplified = df[available_columns].copy()
-    # Convert median_pct columns to decimal form (divide by 100)
+
     for cand in CANDIDATES:
         pct_col = f'median_pct_{cand}'
         if pct_col in df_simplified.columns:
             df_simplified[pct_col] = df_simplified[pct_col] / 100
 
-    # Create simplified CSV with timestamp
     timestamp = datetime.now().strftime("%Y_%m_%d_%H_%M")
     simplified_path = OUTPUT_CSV.replace('.csv', f'_simplified.csv')
     df_simplified.to_csv(simplified_path, index=False)
     print(f"✓ Simplified results saved to {simplified_path}")
 
-    # Show geographic variation in results
+    # Show geographic variation
     print("\n" + "=" * 70)
     print("GEOGRAPHIC VARIATION CHECK")
     print("=" * 70)
@@ -741,9 +844,9 @@ def main():
 
     suburbs = df[df['in_chicago'] == 0]
     if len(suburbs) > 0:
-        print(f"\nSuburbs excluding Evanston (n={len(suburbs) - len(evanston)}):")
         suburbs_no_ev = suburbs[suburbs['in_evanston'] == 0]
         if len(suburbs_no_ev) > 0:
+            print(f"\nSuburbs excluding Evanston (n={len(suburbs_no_ev)}):")
             print(f"  Fine median: {suburbs_no_ev['median_pct_Fine'].median():.1f}%")
             print(f"  Biss median: {suburbs_no_ev['median_pct_Biss'].median():.1f}%")
 

@@ -2,17 +2,19 @@ import geopandas as gpd
 import pandas as pd
 import json
 import plotly.graph_objects as go
+from shapely.ops import unary_union
 
 # ============================================================================
 # CONFIGURATION
 # ============================================================================
 
 SHAPEFILE_PATH = 'data/shapefile/IL24/IL24.shp'
+CONGRESSIONAL_DISTRICTS_PATH = 'data/shapefile/congressional_districts.shp'
 PRECINCT_CSV = 'data/csv_data/expectations/IL_09_precinct_probabilities.csv'
 DISTRICT_PROBS_JSON = 'district_win_probabilities.json'
 POLL_BASELINE_FILE = 'poll_baseline.json'
 OUTPUT_HTML = 'IL09_precinct_map.html'
-downloadable_csv= 'data/IL_09Probabilites.csv'
+downloadable_csv = 'data/IL_09Probabilites.csv'
 
 CANDIDATES = ['Fine', 'Biss', 'Abughazaleh', 'Simmons', 'Amiwala', 'Andrew', 'Huynh']
 
@@ -73,6 +75,10 @@ print("Loading data...")
 gdf = gpd.read_file(SHAPEFILE_PATH)
 print(f"✓ Loaded {len(gdf)} precincts from shapefile")
 
+# Load congressional districts
+gdf_congress = gpd.read_file(CONGRESSIONAL_DISTRICTS_PATH)
+print(f"✓ Loaded {len(gdf_congress)} congressional districts")
+
 # Load precinct probabilities
 df_probs = pd.read_csv(PRECINCT_CSV)
 print(f"✓ Loaded {len(df_probs)} precincts from CSV")
@@ -92,6 +98,76 @@ with open(POLL_BASELINE_FILE, 'r') as f:
     baseline_avg = poll_data['baseline']
 
 print(f"✓ Loaded baseline poll average")
+
+# ============================================================================
+# EXTRACT IL-09 BOUNDARY AND CLIP PRECINCTS
+# ============================================================================
+
+print("\nExtracting IL-09 congressional district boundary...")
+
+# Ensure CRS matches
+if gdf_congress.crs is None:
+    print("  WARNING: Congressional districts have no CRS, assuming EPSG:4326")
+    gdf_congress = gdf_congress.set_crs(epsg=4326)
+
+if gdf.crs is None:
+    print("  WARNING: Precincts have no CRS, assuming EPSG:4326")
+    gdf = gdf.set_crs(epsg=4326)
+
+# Ensure both are in the same CRS
+if gdf_congress.crs != gdf.crs:
+    print(f"  Converting congressional districts from {gdf_congress.crs} to {gdf.crs}")
+    gdf_congress = gdf_congress.to_crs(gdf.crs)
+
+# Find IL-09 district
+# Try common column names for district number
+district_col = None
+for col in ['DISTRICT', 'CD', 'CONG_DIST', 'DIST_NUM', 'NAME', 'NAMELSAD']:
+    if col in gdf_congress.columns:
+        district_col = col
+        break
+
+if district_col is None:
+    print("  Available columns:", gdf_congress.columns.tolist())
+    print("  ERROR: Could not identify district number column")
+    print("  Please check the congressional districts shapefile")
+    exit(1)
+
+print(f"  Using column '{district_col}' to identify districts")
+print(f"  Unique values: {gdf_congress[district_col].unique()}")
+
+# Try to find district 9
+il09_mask = (
+        (gdf_congress[district_col] == '09') |
+        (gdf_congress[district_col] == '9') |
+        (gdf_congress[district_col] == 9) |
+        (gdf_congress[district_col].astype(str).str.contains('09', na=False)) |
+        (gdf_congress[district_col].astype(str).str.contains('9', na=False))
+)
+
+if il09_mask.sum() == 0:
+    print("  ERROR: Could not find district 9 in congressional districts shapefile")
+    print(f"  Available values in {district_col}: {gdf_congress[district_col].unique()}")
+    exit(1)
+
+il09_boundary = gdf_congress[il09_mask].copy()
+print(f"✓ Found IL-09 district ({len(il09_boundary)} polygon(s))")
+
+# Dissolve into single polygon if multiple parts
+il09_geom = il09_boundary.geometry.unary_union
+print(f"✓ Created unified IL-09 boundary")
+
+# Clip precincts to IL-09 boundary
+print("\nClipping precincts to IL-09 boundary...")
+gdf['geometry'] = gdf.geometry.intersection(il09_geom)
+
+# Remove any precincts that became empty after clipping
+empty_mask = gdf.geometry.is_empty
+if empty_mask.sum() > 0:
+    print(f"  Removing {empty_mask.sum()} precincts that are outside IL-09")
+    gdf = gdf[~empty_mask].copy()
+
+print(f"✓ Clipped {len(gdf)} precincts to IL-09 boundaries")
 
 # ============================================================================
 # FIX JOINFIELD CASE SENSITIVITY ISSUES
@@ -201,8 +277,6 @@ gdf_merged['competitiveness_margin'] = gdf_merged.apply(
     axis=1
 )
 
-gdf_merged['competitiveness_margin'] = gdf_merged.apply(calculate_competitiveness, axis=1)
-
 # ============================================================================
 # REGIONAL ANALYSIS
 # ============================================================================
@@ -260,6 +334,32 @@ for region in regions:
     }
 
 # ============================================================================
+# CREATE REGIONAL BOUNDARY OUTLINES
+# ============================================================================
+
+print("Creating regional boundary outlines...")
+
+# Create dissolved geometries for each region
+regional_boundaries = {}
+
+for region in regions:
+    region_precincts = gdf_merged[gdf_merged['region'] == region]
+
+    if len(region_precincts) > 0:
+        # Dissolve all precincts in this region into one boundary
+        region_boundary = region_precincts.geometry.unary_union
+
+        # Convert to GeoDataFrame for easier handling
+        region_gdf = gpd.GeoDataFrame(
+            {'region': [region]},
+            geometry=[region_boundary],
+            crs=gdf_merged.crs
+        )
+
+        regional_boundaries[region] = region_gdf
+        print(f"  Created boundary for {region}")
+
+# ============================================================================
 # FIND MOST COMPETITIVE PRECINCTS
 # ============================================================================
 
@@ -286,6 +386,15 @@ def create_hover_text(row):
 
     ranked = sort_candidates_by_prob_then_vote(row)
 
+    # Get winner and second place for margin calculation
+    winner = ranked[0]['candidate']
+    winner_vote_pct = ranked[0]['median_pct']
+    second_vote_pct = ranked[1]['median_pct'] if len(ranked) > 1 else 0
+    margin = winner_vote_pct - second_vote_pct
+
+    # Get expected turnout
+    turnout = row.get('estimated_turnout', 0)
+
     lines = [
         f"<b>Region: {region}</b><br>",
         f"<b>Precinct: {precinct_name}</b><br>",
@@ -300,6 +409,10 @@ def create_hover_text(row):
         vote = f"{r['median_pct']:>6.1f}%"
         lines.append(f"{cand} {winp}  {vote}<br>")
 
+    lines.append("-------------------------------<br>")
+    lines.append(f"<b>Expected Winner: {winner}</b><br>")
+    lines.append(f"<b>Margin: {margin:>6.1f} pts</b><br>")
+    lines.append(f"<b>Expected Turnout: {int(turnout):,}</b><br>")
     lines.append("</span>")
 
     return "".join(lines)
@@ -333,11 +446,45 @@ for cand in CANDIDATES:
             showscale=False,
             marker_line_width=0.5,
             marker_line_color='white',
-            marker_opacity=0.85,  # Add transparency to see streets underneath
+            marker_opacity=0.6,  # Add transparency to see streets underneath
             text=gdf_subset['hover_text'],
             hovertemplate='%{text}<extra></extra>',
             name=f'{cand} ({mask.sum()} precincts)',
             featureidkey="properties.id"
+        ))
+
+# Add regional boundary outlines
+print("Adding regional boundary outlines to map...")
+
+for region, gdf_region in regional_boundaries.items():
+    # Convert boundary to lat/lon coordinates for Plotly
+    geom = gdf_region.geometry.iloc[0]
+
+    if geom.geom_type == 'Polygon':
+        polygons = [geom]
+    elif geom.geom_type == 'MultiPolygon':
+        polygons = list(geom.geoms)
+    else:
+        continue
+
+    # Extract coordinates for each polygon
+    for poly in polygons:
+        # Get exterior coordinates
+        coords = list(poly.exterior.coords)
+        lons = [c[0] for c in coords]
+        lats = [c[1] for c in coords]
+
+        # Add boundary line (all black, not in legend)
+        fig.add_trace(go.Scattermapbox(
+            lon=lons,
+            lat=lats,
+            mode='lines',
+            line=dict(
+                width=3,
+                color='black'
+            ),
+            hoverinfo='skip',
+            showlegend=False
         ))
 
 # Use projected CRS for centroid calculation
@@ -351,12 +498,11 @@ zoom = 9.5
 
 fig.update_layout(
     mapbox=dict(
-        # Try 'open-street-map' as it's the most reliable for free web hosting
         style="open-street-map",
         zoom=zoom,
         center=dict(lat=center_lat, lon=center_lon),
     ),
-    margin={"r": 0, "t": 50, "l": 0, "b": 0},  # Tighter margins look better on web
+    margin={"r": 0, "t": 50, "l": 0, "b": 0},
     title={
         'text': 'IL-09 Democratic Primary',
         'x': 0.5,
@@ -371,7 +517,7 @@ fig.update_layout(
         y=0.99,
         xanchor="left",
         x=0.01,
-        bgcolor="rgba(255,255,255,0.8)"
+        bgcolor="rgba(255,255,255,0.9)"
     )
 )
 
@@ -727,6 +873,7 @@ full_html = f"""
     </div>
     {stats_html}
 </body>
+
 </html>
 """
 
