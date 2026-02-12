@@ -333,6 +333,7 @@ for cand in CANDIDATES:
             showscale=False,
             marker_line_width=0.5,
             marker_line_color='white',
+            marker_opacity=0.85,  # Add transparency to see streets underneath
             text=gdf_subset['hover_text'],
             hovertemplate='%{text}<extra></extra>',
             name=f'{cand} ({mask.sum()} precincts)',
