@@ -562,7 +562,7 @@ stats_html += """
 
         <!-- Win Probabilities Table -->
         <div style="width: 100%; max-width: 400px;">
-            <h2 style="text-align: center; color: #333; border-bottom: 3px solid #333; padding-bottom: 10px; font-size: 1.2rem;">
+            <h2 style="text-align: center; color: black; border-bottom: 3px solid #333; padding-bottom: 10px; font-size: 1.2rem;">
                 District-Wide Win Probabilities
             </h2>
             <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.9rem;">
@@ -590,7 +590,7 @@ stats_html += """
 
         <!-- Baseline Poll Average Table -->
         <div style="width: 100%; max-width: 400px;">
-            <h2 style="text-align: center; color: #333; border-bottom: 3px solid #333; padding-bottom: 10px; font-size: 1.2rem;">
+            <h2 style="text-align: center; color: black; border-bottom: 3px solid #333; padding-bottom: 10px; font-size: 1.2rem;">
                 Weighted Poll Average
             </h2>
             <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.9rem;">
@@ -621,7 +621,7 @@ stats_html += """
 
         <!-- Projected Results Table -->
         <div style="width: 100%; max-width: 400px;">
-            <h2 style="text-align: center; color: #333; border-bottom: 3px solid #333; padding-bottom: 10px; font-size: 1.2rem;">
+            <h2 style="text-align: center; color: black; border-bottom: 3px solid #333; padding-bottom: 10px; font-size: 1.2rem;">
                 Projected Results
             </h2>
             <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.9rem;">
@@ -650,7 +650,7 @@ stats_html += """
 
         <!-- Simulations Won Table -->
         <div style="width: 100%; max-width: 400px;">
-            <h2 style="text-align: center; color: #333; border-bottom: 3px solid #333; padding-bottom: 10px; font-size: 1.2rem;">
+            <h2 style="text-align: center; color: black; border-bottom: 3px solid #333; padding-bottom: 10px; font-size: 1.2rem;">
                 Simulations Won
             </h2>
             <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.9rem;">
@@ -678,7 +678,7 @@ for cand, wins in sorted_sim_wins:
 stats_html += f"""
                 </tbody>
             </table>
-            <p style="text-align: center; color: #666; font-size: 0.85rem; margin-top: 10px;">
+            <p style="text-align: center; color: black; font-size: 0.85rem; margin-top: 10px;">
                 Out of {total_sims:,} simulations
             </p>
         </div>
@@ -686,7 +686,7 @@ stats_html += f"""
 
     <!-- Regional Breakdown Section -->
     <div style="margin-top: 40px;">
-        <h2 style="text-align: center; color: #333; border-bottom: 3px solid #333; padding-bottom: 10px; font-size: 1.4rem; margin-bottom: 20px;">
+        <h2 style="text-align: center; color: black; border-bottom: 3px solid #333; padding-bottom: 10px; font-size: 1.4rem; margin-bottom: 20px;">
             Regional Breakdown - Projected Vote Shares
         </h2>
 """
@@ -741,7 +741,7 @@ stats_html += """
 
     <!-- Most Competitive Precincts Section -->
     <div style="margin-top: 40px;">
-        <h2 style="text-align: center; color: #333; border-bottom: 3px solid #333; padding-bottom: 10px; font-size: 1.4rem; margin-bottom: 20px;">
+        <h2 style="text-align: center; color: black; border-bottom: 3px solid #333; padding-bottom: 10px; font-size: 1.4rem; margin-bottom: 20px;">
             Top 10 Most Competitive Precincts
         </h2>
         <div style="overflow-x: auto;">
@@ -813,7 +813,7 @@ stats_html += """
                 </tbody>
             </table>
         </div>
-        <p style="text-align: center; color: #666; font-size: 0.85rem; margin-top: 10px;">
+        <p style="text-align: center; color: black; font-size: 0.85rem; margin-top: 10px;">
             <span style="background-color: #90EE90; padding: 2px 6px;">Green</span> = Most likely winner | 
             <span style="background-color: #FFE4B5; padding: 2px 6px;">Orange</span> = Second most likely
         </p>
