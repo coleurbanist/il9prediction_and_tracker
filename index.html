@@ -386,86 +386,117 @@
     </footer>
 
     <script>
-        // Candidate data - UPDATE THESE VALUES WITH YOUR ACTUAL DATA
-        const candidates = {
-            'Fine': { winProb: 39.2, voteShare: 24.8, color: 'green' },
-            'Biss': { winProb: 51.3, voteShare: 23.7, color: 'purple' },
-            'Abughazaleh': { winProb: 6.5, voteShare: 17.9, color: 'orange' },
-            'Simmons': { winProb: 1.8, voteShare: 12.4, color: 'deeppink' },
-            'Amiwala': { winProb: 0.8, voteShare: 10.8, color: 'turquoise' },
-            'Andrew': { winProb: 0.3, voteShare: 5.9, color: 'red' },
-            'Huynh': { winProb: 0.1, voteShare: 4.5, color: 'gray' }
-        };
+    // Load JSON dynamically
+    fetch('district_win_probabilities.json')
+        .then(response => response.json())
+        .then(modelData => {
 
-        // Sort candidates by win probability
-        const sortedCandidates = Object.entries(candidates).sort((a, b) => b[1].winProb - a[1].winProb);
+            const winProbs = modelData.win_probabilities;
+            const voteShares = modelData.median_results;
 
-        // Create Donut Chart
-        const donutData = [{
-            values: sortedCandidates.map(([name, data]) => data.winProb),
-            labels: sortedCandidates.map(([name, data]) => name),
-            type: 'pie',
-            hole: 0.5,
-            marker: {
-                colors: sortedCandidates.map(([name, data]) => data.color)
-            },
-            textinfo: 'label+percent',
-            textposition: 'outside',
-            hovertemplate: '<b>%{label}</b><br>Win Probability: %{value:.1f}%<extra></extra>'
-        }];
+            // Define consistent candidate colors
+            const candidateColors = {
+                'Fine': 'green',
+                'Biss': 'purple',
+                'Abughazaleh': 'orange',
+                'Simmons': 'deeppink',
+                'Amiwala': 'turquoise',
+                'Andrew': 'red',
+                'Huynh': 'gray'
+            };
 
-        const donutLayout = {
-            showlegend: false,
-            height: 400,
-            margin: { t: 20, b: 20, l: 20, r: 20 },
-            paper_bgcolor: 'rgba(0,0,0,0)',
-            plot_bgcolor: 'rgba(0,0,0,0)',
-            font: {
-                size: 12,
-                family: 'Arial'
-            }
-        };
+            // Build unified candidate object dynamically
+            const candidates = {};
 
-        Plotly.newPlot('donutChart', donutData, donutLayout, {responsive: true, displayModeBar: false});
+            Object.keys(winProbs).forEach(name => {
+                candidates[name] = {
+                    winProb: winProbs[name],
+                    voteShare: voteShares[name],
+                    color: candidateColors[name] || 'black'
+                };
+            });
 
-        // Create Bar Chart (sorted by vote share)
-        const sortedByVote = Object.entries(candidates).sort((a, b) => b[1].voteShare - a[1].voteShare);
+            // -------------------------------
+            // DONUT CHART (Win Probability)
+            // -------------------------------
 
-        const barData = [{
-            y: sortedByVote.map(([name, data]) => name),
-            x: sortedByVote.map(([name, data]) => data.voteShare),
-            type: 'bar',
-            orientation: 'h',
-            marker: {
-                color: sortedByVote.map(([name, data]) => data.color)
-            },
-            text: sortedByVote.map(([name, data]) => data.voteShare.toFixed(1) + '%'),
-            textposition: 'outside',
-            hovertemplate: '<b>%{y}</b><br>Vote Share: %{x:.1f}%<extra></extra>'
-        }];
+            const sortedCandidates = Object.entries(candidates)
+                .sort((a, b) => b[1].winProb - a[1].winProb);
 
-        const barLayout = {
-            showlegend: false,
-            height: 400,
-            margin: { t: 20, b: 40, l: 100, r: 60 },
-            xaxis: {
-                title: 'Expected Vote Share (%)',
-                range: [0, Math.max(...sortedByVote.map(([n, d]) => d.voteShare)) + 5],
-                gridcolor: '#eee'
-            },
-            yaxis: {
-                autorange: 'reversed',
-                gridcolor: '#eee'
-            },
-            paper_bgcolor: 'rgba(0,0,0,0)',
-            plot_bgcolor: 'rgba(0,0,0,0)',
-            font: {
-                size: 12,
-                family: 'Arial'
-            }
-        };
+            const donutData = [{
+                values: sortedCandidates.map(([n, d]) => d.winProb),
+                labels: sortedCandidates.map(([n]) => n),
+                type: 'pie',
+                hole: 0.5,
+                marker: {
+                    colors: sortedCandidates.map(([n, d]) => d.color)
+                },
+                textinfo: 'label+percent',
+                textposition: 'outside',
+                hovertemplate: '<b>%{label}</b><br>Win Probability: %{value:.1f}%<extra></extra>'
+            }];
 
-        Plotly.newPlot('barChart', barData, barLayout, {responsive: true, displayModeBar: false});
-    </script>
+            const donutLayout = {
+                showlegend: false,
+                height: 400,
+                margin: { t: 20, b: 20, l: 20, r: 20 },
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                font: { size: 12 }
+            };
+
+            Plotly.newPlot('donutChart', donutData, donutLayout,
+                {responsive: true, displayModeBar: false});
+
+            // -------------------------------
+            // BAR CHART (Median Vote Share)
+            // -------------------------------
+
+            const sortedByVote = Object.entries(candidates)
+                .sort((a, b) => b[1].voteShare - a[1].voteShare);
+
+            const barData = [{
+                y: sortedByVote.map(([n]) => n),
+                x: sortedByVote.map(([n, d]) => d.voteShare),
+                type: 'bar',
+                orientation: 'h',
+                marker: {
+                    color: sortedByVote.map(([n, d]) => d.color)
+                },
+                text: sortedByVote.map(([n, d]) =>
+                    d.voteShare.toFixed(1) + '%'
+                ),
+                textposition: 'outside',
+                hovertemplate: '<b>%{y}</b><br>Vote Share: %{x:.1f}%<extra></extra>'
+            }];
+
+            const barLayout = {
+                showlegend: false,
+                height: 400,
+                margin: { t: 20, b: 40, l: 100, r: 60 },
+                xaxis: {
+                    title: 'Expected Vote Share (%)',
+                    range: [0,
+                        Math.max(...sortedByVote.map(([n, d]) => d.voteShare)) + 5
+                    ],
+                    gridcolor: '#eee'
+                },
+                yaxis: {
+                    autorange: 'reversed',
+                    gridcolor: '#eee'
+                },
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                font: { size: 12 }
+            };
+
+            Plotly.newPlot('barChart', barData, barLayout,
+                {responsive: true, displayModeBar: false});
+
+        })
+        .catch(error => {
+            console.error('Error loading JSON:', error);
+        });
+</script>
 </body>
 </html>
