@@ -8,23 +8,23 @@ house_effect = 2
 
 # Central Poll List
 POLLS = [
-# {
-#         'name': 'Biss Internal (Nov 2025)',
-#         'date': '2026-02-11',
-#         'pollster_quality': 4,
-#         'sample_size': 500,
-#         'margin_of_error': 4.4,
-#         'is_internal': True,
-#         'internal_for': 'Biss',
-#         'house_effect_adjustment': house_effect,
-#         'pollster_id': 'Biss_Internal',
-#         'wave_id': 2,
-#         'results': {
-#             'Fine': 18, 'Biss': 31, 'Abughazaleh': 18,
-#             'Simmons': 7, 'Amiwala': 4, 'Andrew': 7, 'Huynh': 3
-#         },
-#         'undecided': 11
-#     },
+{
+        'name': 'Biss Internal (Nov 2025)',
+        'date': '2026-02-11',
+        'pollster_quality': 4,
+        'sample_size': 500,
+        'margin_of_error': 4.4,
+        'is_internal': True,
+        'internal_for': 'Biss',
+        'house_effect_adjustment': house_effect,
+        'pollster_id': 'Biss_Internal',
+        'wave_id': 2,
+        'results': {
+            'Fine': 18, 'Biss': 31, 'Abughazaleh': 18,
+            'Simmons': 7, 'Amiwala': 4, 'Andrew': 7, 'Huynh': 3
+        },
+        'undecided': 11
+    },
 
     {
         'name': 'Fine Internal (Feb 2026)',
