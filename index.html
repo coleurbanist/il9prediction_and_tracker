@@ -19,7 +19,6 @@
             min-height: 100vh;
         }
 
-        /* Animated background pattern */
         body::before {
             content: '';
             position: fixed;
@@ -33,7 +32,6 @@
             z-index: 0;
         }
 
-        /* Navigation Bar */
         nav {
             background-color: rgba(51, 51, 51, 0.95);
             padding: 15px 0;
@@ -84,11 +82,6 @@
             box-shadow: 0 6px 12px rgba(0,0,0,0.3);
         }
 
-        .nav-button:active {
-            transform: translateY(0);
-        }
-
-        /* Main Content */
         .container {
             max-width: 1400px;
             margin: 40px auto;
@@ -97,7 +90,6 @@
             z-index: 1;
         }
 
-        /* Hero Section with Charts */
         .hero-section {
             background: rgba(255, 255, 255, 0.95);
             padding: 40px;
@@ -124,7 +116,15 @@
             margin-bottom: 30px;
         }
 
-        /* Charts Container */
+        /* Last Updated Info */
+        .last-updated {
+            text-align: center;
+            color: #666;
+            font-size: 1rem;
+            margin-bottom: 20px;
+            font-style: italic;
+        }
+
         .charts-container {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -170,86 +170,6 @@
             box-shadow: 0 8px 16px rgba(0,0,0,0.3);
         }
 
-        /* Model Cards */
-        .models-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 25px;
-            margin-top: 40px;
-        }
-
-        .model-card {
-            background: rgba(255, 255, 255, 0.95);
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
-            transition: transform 0.3s, box-shadow 0.3s;
-            backdrop-filter: blur(10px);
-        }
-
-        .model-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 12px 40px rgba(0,0,0,0.3);
-        }
-
-        .model-card h2 {
-            color: #333;
-            font-size: 1.8rem;
-            margin-bottom: 15px;
-            border-bottom: 2px solid #667eea;
-            padding-bottom: 10px;
-        }
-
-        .model-card p {
-            color: #666;
-            font-size: 1rem;
-            line-height: 1.6;
-            margin-bottom: 20px;
-        }
-
-        .model-card .features {
-            list-style: none;
-            margin-bottom: 25px;
-        }
-
-        .model-card .features li {
-            padding: 8px 0;
-            color: #555;
-            border-bottom: 1px solid #eee;
-        }
-
-        .model-card .features li:before {
-            content: "✓ ";
-            color: #667eea;
-            font-weight: bold;
-            margin-right: 8px;
-        }
-
-        .model-card .features li:last-child {
-            border-bottom: none;
-        }
-
-        .card-button {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 12px 30px;
-            text-decoration: none;
-            border-radius: 25px;
-            font-weight: bold;
-            font-size: 1rem;
-            transition: all 0.3s;
-            display: inline-block;
-            width: 100%;
-            text-align: center;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
-        }
-
-        .card-button:hover {
-            transform: scale(1.02);
-            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
-        }
-
-        /* Footer */
         footer {
             background-color: rgba(51, 51, 51, 0.95);
             color: white;
@@ -261,50 +181,23 @@
             backdrop-filter: blur(10px);
         }
 
-        /* Mobile Responsiveness */
         @media (max-width: 768px) {
             .nav-container {
                 flex-direction: column;
                 gap: 15px;
             }
 
-            .nav-title {
-                margin-right: 0;
-                margin-bottom: 10px;
-            }
-
             .hero-section h1 {
                 font-size: 1.8rem;
             }
 
-            .hero-section p {
-                font-size: 1rem;
-            }
-
-            .hero-section {
-                padding: 25px;
-            }
-
             .charts-container {
-                grid-template-columns: 1fr;
-            }
-
-            .model-card {
-                padding: 20px;
-            }
-
-            .model-card h2 {
-                font-size: 1.4rem;
-            }
-
-            .models-grid {
                 grid-template-columns: 1fr;
             }
         }
     </style>
 </head>
 <body>
-    <!-- Navigation Bar -->
     <nav>
         <div class="nav-container">
             <div class="nav-title">Cole's Election Models</div>
@@ -314,14 +207,17 @@
         </div>
     </nav>
 
-    <!-- Main Content -->
     <div class="container">
-        <!-- Hero Section with Charts -->
         <div class="hero-section">
             <h1>IL-09 Democratic Primary Model</h1>
             <p>
                 Data-driven predictions for Illinois's 9th Congressional District Democratic Primary
             </p>
+
+            <!-- Last Updated -->
+            <div class="last-updated" id="lastUpdated">
+                Loading...
+            </div>
 
             <!-- Charts -->
             <div class="charts-container">
@@ -343,25 +239,26 @@
                 <a href="IL09_precinct_map.html">View Full Interactive Model →</a>
             </div>
         </div>
-
-
     </div>
 
-    <!-- Footer -->
     <footer>
         <p>&copy; 2026 Cole's Election Models | Data-Driven Political Analysis</p>
     </footer>
 
     <script>
-    // Load JSON dynamically
     fetch('district_win_probabilities.json')
         .then(response => response.json())
         .then(modelData => {
 
             const winProbs = modelData.win_probabilities;
             const voteShares = modelData.median_results;
+            const oldVoteShares = modelData.median_results_old || {};
+            const changes = modelData.changes || {};
+            const lastRun = modelData.last_run || 'Unknown';
 
-            // Define consistent candidate colors
+            // Update last run date
+            document.getElementById('lastUpdated').textContent = `Last run on ${lastRun}`;
+
             const candidateColors = {
                 'Fine': 'green',
                 'Biss': 'purple',
@@ -372,13 +269,14 @@
                 'Huynh': 'gray'
             };
 
-            // Build unified candidate object dynamically
             const candidates = {};
-
             Object.keys(winProbs).forEach(name => {
                 candidates[name] = {
                     winProb: winProbs[name],
                     voteShare: voteShares[name],
+                    oldVoteShare: oldVoteShares[name] || voteShares[name],
+                    winProbChange: changes[name]?.win_prob_change || 0,
+                    voteShareChange: changes[name]?.vote_share_change || 0,
                     color: candidateColors[name] || 'black'
                 };
             });
@@ -390,9 +288,19 @@
             const sortedCandidates = Object.entries(candidates)
                 .sort((a, b) => b[1].winProb - a[1].winProb);
 
+            // Build custom labels with change indicators
+            const donutLabels = sortedCandidates.map(([name, data]) => {
+                const change = data.winProbChange;
+                let changeSymbol = '';
+                if (Math.abs(change) >= 0.1) {  // Only show if change > 0.1%
+                    changeSymbol = change > 0 ? ` ↑${change.toFixed(1)}%` : ` ↓${Math.abs(change).toFixed(1)}%`;
+                }
+                return name + changeSymbol;
+            });
+
             const donutData = [{
                 values: sortedCandidates.map(([n, d]) => d.winProb),
-                labels: sortedCandidates.map(([n]) => n),
+                labels: donutLabels,
                 type: 'pie',
                 hole: 0.5,
                 marker: {
@@ -400,7 +308,12 @@
                 },
                 textinfo: 'label+percent',
                 textposition: 'outside',
-                hovertemplate: '<b>%{label}</b><br>Win Probability: %{value:.1f}%<extra></extra>'
+                hovertemplate: sortedCandidates.map(([name, data]) => {
+                    const changeText = data.winProbChange !== 0
+                        ? `<br>Change: ${data.winProbChange > 0 ? '+' : ''}${data.winProbChange.toFixed(1)}%`
+                        : '';
+                    return `<b>${name}</b><br>Win Probability: %{value:.1f}%${changeText}<extra></extra>`;
+                })
             }];
 
             const donutLayout = {
@@ -416,12 +329,13 @@
                 {responsive: true, displayModeBar: false});
 
             // -------------------------------
-            // BAR CHART (Median Vote Share)
+            // BAR CHART (Median Vote Share with old values)
             // -------------------------------
 
             const sortedByVote = Object.entries(candidates)
                 .sort((a, b) => b[1].voteShare - a[1].voteShare);
 
+            // Main bars (current values)
             const barData = [{
                 y: sortedByVote.map(([n]) => n),
                 x: sortedByVote.map(([n, d]) => d.voteShare),
@@ -434,8 +348,32 @@
                     d.voteShare.toFixed(1) + '%'
                 ),
                 textposition: 'outside',
-                hovertemplate: '<b>%{y}</b><br>Vote Share: %{x:.1f}%<extra></extra>'
+                hovertemplate: sortedByVote.map(([name, data]) => {
+                    const changeText = data.voteShareChange !== 0
+                        ? `<br>Change: ${data.voteShareChange > 0 ? '+' : ''}${data.voteShareChange.toFixed(1)}%`
+                        : '';
+                    return `<b>${name}</b><br>Vote Share: %{x:.1f}%${changeText}<extra></extra>`;
+                }),
+                name: 'Current'
             }];
+
+            // Add vertical lines for old values (if different)
+            const shapes = [];
+            sortedByVote.forEach(([name, data], index) => {
+                if (Math.abs(data.voteShare - data.oldVoteShare) > 0.01) {
+                    shapes.push({
+                        type: 'line',
+                        x0: data.oldVoteShare,
+                        x1: data.oldVoteShare,
+                        y0: index - 0.4,
+                        y1: index + 0.4,
+                        line: {
+                            color: 'black',
+                            width: 3
+                        }
+                    });
+                }
+            });
 
             const barLayout = {
                 showlegend: false,
@@ -452,6 +390,7 @@
                     autorange: 'reversed',
                     gridcolor: '#eee'
                 },
+                shapes: shapes,
                 paper_bgcolor: 'rgba(0,0,0,0)',
                 plot_bgcolor: 'rgba(0,0,0,0)',
                 font: { size: 12 }
@@ -463,7 +402,8 @@
         })
         .catch(error => {
             console.error('Error loading JSON:', error);
+            document.getElementById('lastUpdated').textContent = 'Error loading data';
         });
-</script>
+    </script>
 </body>
 </html>

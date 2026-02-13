@@ -944,16 +944,88 @@ if __name__ == "__main__":
             'crosstab_moes': crosstab_moes  # NEW: Export crosstab margins of error
         }, f, indent=2)
 
-    with open('district_win_probabilities.json', 'w') as f:
-        json.dump({
+        # Add this section at the end of your simulation script, replacing the export section
+
+        # Export forecast for precinct-level model
+        baseline, undecided_pct = aggregate_polls(POLLS)
+        avg_moe = calculate_average_moe(POLLS)
+
+        CANDIDATES = ['Fine', 'Biss', 'Abughazaleh', 'Simmons', 'Amiwala', 'Andrew', 'Huynh']
+        median_forecast = {cand: np.percentile(all_results[cand], 50) for cand in CANDIDATES}
+
+        # Export baseline
+        with open('poll_baseline.json', 'w') as f:
+            json.dump({
+                'baseline': baseline,
+                'median_forecast': median_forecast,
+                'undecided_pct': undecided_pct,
+                'avg_moe': avg_moe,
+                'scaled_crosstabs': scaled_crosstabs,
+                'crosstab_moes': crosstab_moes
+            }, f, indent=2)
+
+        # --- ARCHIVE OLD RESULTS AND TRACK CHANGES ---
+        import os
+        from datetime import datetime
+
+        # Load previous results if they exist
+        old_data = {}
+        if os.path.exists('district_win_probabilities.json'):
+            with open('district_win_probabilities.json', 'r') as f:
+                old_data = json.load(f)
+
+        # Calculate changes
+        changes = {}
+        for cand in CANDIDATES:
+            changes[cand] = {
+                'win_prob_change': win_probs[cand] - old_data.get('win_probabilities', {}).get(cand, win_probs[cand]),
+                'vote_share_change': median_forecast[cand] - old_data.get('median_results', {}).get(cand,
+                                                                                                    median_forecast[
+                                                                                                        cand])
+            }
+
+        # Get current timestamp
+        last_run = datetime.now().strftime('%Y-%m-%d %I:%M %p')
+
+        # Build new data structure with archived old values
+        new_data = {
             'win_probabilities': win_probs,
             'median_results': median_forecast,
-            'simulation_wins': wins
-        }, f, indent=2)
+            'simulation_wins': wins,
+            'last_run': last_run,
+            'changes': changes
+        }
 
-    print("\n✓ Forecast exported to poll_baseline.json (including scaled crosstabs)")
-    print("✓ District win probabilities exported to district_win_probabilities.json")
+        # Archive old values if they existed
+        if old_data.get('win_probabilities'):
+            new_data['win_probabilities_old'] = old_data['win_probabilities']
+        if old_data.get('median_results'):
+            new_data['median_results_old'] = old_data['median_results']
 
-    print("\n" + "=" * 70)
-    print("SIMULATION COMPLETE!")
-    print("=" * 70)
+        # Save updated data
+        with open('district_win_probabilities.json', 'w') as f:
+            json.dump(new_data, f, indent=2)
+
+        print("\n✓ Forecast exported to poll_baseline.json (including scaled crosstabs)")
+        print("✓ District win probabilities exported to district_win_probabilities.json")
+        print(f"✓ Last run timestamp: {last_run}")
+
+        # Print changes
+        print("\n" + "=" * 70)
+        print("CHANGES SINCE LAST RUN")
+        print("=" * 70)
+        if old_data.get('win_probabilities'):
+            print(f"\n{'Candidate':<15s} {'Win Prob Change':<20s} {'Vote Share Change':<20s}")
+            print("-" * 60)
+            for cand in CANDIDATES:
+                wp_change = changes[cand]['win_prob_change']
+                vs_change = changes[cand]['vote_share_change']
+                wp_arrow = "↑" if wp_change > 0 else "↓" if wp_change < 0 else "→"
+                vs_arrow = "↑" if vs_change > 0 else "↓" if vs_change < 0 else "→"
+                print(f"{cand:<15s} {wp_arrow} {wp_change:+6.1f}%           {vs_arrow} {vs_change:+6.1f}%")
+        else:
+            print("No previous run to compare against.")
+
+        print("\n" + "=" * 70)
+        print("SIMULATION COMPLETE!")
+        print("=" * 70)

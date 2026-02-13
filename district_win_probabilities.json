@@ -1,30 +1,79 @@
 {
   "win_probabilities": {
-    "Fine": 33.4097,
-    "Biss": 55.6289,
-    "Abughazaleh": 9.5157,
-    "Simmons": 0.7992000000000001,
-    "Amiwala": 0.2254,
-    "Andrew": 0.22569999999999998,
-    "Huynh": 0.0929
+    "Fine": 33.489999999999995,
+    "Biss": 55.4897,
+    "Abughazaleh": 9.5747,
+    "Simmons": 0.7986,
+    "Amiwala": 0.2275,
+    "Andrew": 0.22430000000000003,
+    "Huynh": 0.0972
   },
   "median_results": {
-    "Fine": 25.045881143997974,
-    "Biss": 28.21155013761102,
-    "Abughazaleh": 18.550943722528245,
-    "Simmons": 8.107611388349863,
-    "Amiwala": 4.964315504506598,
-    "Andrew": 4.937979609092039,
-    "Huynh": 2.9104780892161375
+    "Fine": 25.064573877638658,
+    "Biss": 28.1976715408203,
+    "Abughazaleh": 18.561698540472868,
+    "Simmons": 8.127121265206977,
+    "Amiwala": 4.968976996937895,
+    "Andrew": 4.91593197262862,
+    "Huynh": 2.9202601425674066
   },
   "simulation_wins": {
-    "Fine": 334097,
-    "Biss": 556289,
-    "Abughazaleh": 95157,
-    "Simmons": 7992,
-    "Amiwala": 2254,
-    "Andrew": 2257,
-    "Huynh": 929,
-    "Other_Breakout": 1025
+    "Fine": 334900,
+    "Biss": 554897,
+    "Abughazaleh": 95747,
+    "Simmons": 7986,
+    "Amiwala": 2275,
+    "Andrew": 2243,
+    "Huynh": 972,
+    "Other_Breakout": 980
+  },
+  "last_run": "2026-02-12 06:35 PM",
+  "changes": {
+    "Fine": {
+      "win_prob_change": 0.0067999999999912575,
+      "vote_share_change": -0.004277810792814307
+    },
+    "Biss": {
+      "win_prob_change": -0.0870000000000033,
+      "vote_share_change": -0.00918639526034326
+    },
+    "Abughazaleh": {
+      "win_prob_change": 0.0602999999999998,
+      "vote_share_change": 0.009110264249180489
+    },
+    "Simmons": {
+      "win_prob_change": 0.010599999999999943,
+      "vote_share_change": 0.014722835875097928
+    },
+    "Amiwala": {
+      "win_prob_change": -0.001899999999999985,
+      "vote_share_change": -0.005441279598322524
+    },
+    "Andrew": {
+      "win_prob_change": 0.004400000000000015,
+      "vote_share_change": -0.014639332722260257
+    },
+    "Huynh": {
+      "win_prob_change": 0.009099999999999997,
+      "vote_share_change": -0.008689461031800239
+    }
+  },
+  "win_probabilities_old": {
+    "Fine": 33.483200000000004,
+    "Biss": 55.5767,
+    "Abughazaleh": 9.5144,
+    "Simmons": 0.788,
+    "Amiwala": 0.2294,
+    "Andrew": 0.2199,
+    "Huynh": 0.0881
+  },
+  "median_results_old": {
+    "Fine": 25.068851688431472,
+    "Biss": 28.20685793608064,
+    "Abughazaleh": 18.552588276223688,
+    "Simmons": 8.11239842933188,
+    "Amiwala": 4.974418276536218,
+    "Andrew": 4.93057130535088,
+    "Huynh": 2.928949603599207
   }
 }
