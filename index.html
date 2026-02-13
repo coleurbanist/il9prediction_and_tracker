@@ -116,7 +116,6 @@
             margin-bottom: 30px;
         }
 
-        /* Last Updated Info */
         .last-updated {
             text-align: center;
             color: #666;
@@ -214,27 +213,22 @@
                 Data-driven predictions for Illinois's 9th Congressional District Democratic Primary
             </p>
 
-            <!-- Last Updated -->
             <div class="last-updated" id="lastUpdated">
                 Loading...
             </div>
 
-            <!-- Charts -->
             <div class="charts-container">
-                <!-- Donut Chart -->
                 <div class="chart-wrapper">
                     <div class="chart-title">Win Probabilities</div>
                     <div id="donutChart"></div>
                 </div>
 
-                <!-- Bar Chart -->
                 <div class="chart-wrapper">
                     <div class="chart-title">Expected Vote Share</div>
                     <div id="barChart"></div>
                 </div>
             </div>
 
-            <!-- View Full Model Button -->
             <div class="view-full-model">
                 <a href="IL09_precinct_map.html">View Full Interactive Model →</a>
             </div>
@@ -247,17 +241,27 @@
 
     <script>
     fetch('district_win_probabilities.json')
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to load data');
+            }
+            return response.json();
+        })
         .then(modelData => {
+            console.log('Loaded data:', modelData); // Debug log
 
             const winProbs = modelData.win_probabilities;
             const voteShares = modelData.median_results;
             const oldVoteShares = modelData.median_results_old || {};
             const changes = modelData.changes || {};
-            const lastRun = modelData.last_run || 'Unknown';
+            const lastRun = modelData.last_run || null;
 
             // Update last run date
-            document.getElementById('lastUpdated').textContent = `Last run on ${lastRun}`;
+            if (lastRun) {
+                document.getElementById('lastUpdated').textContent = `Last run on ${lastRun}`;
+            } else {
+                document.getElementById('lastUpdated').textContent = 'Run simulation to see last update time';
+            }
 
             const candidateColors = {
                 'Fine': 'green',
@@ -272,27 +276,23 @@
             const candidates = {};
             Object.keys(winProbs).forEach(name => {
                 candidates[name] = {
-                    winProb: winProbs[name],
-                    voteShare: voteShares[name],
-                    oldVoteShare: oldVoteShares[name] || voteShares[name],
-                    winProbChange: changes[name]?.win_prob_change || 0,
-                    voteShareChange: changes[name]?.vote_share_change || 0,
+                    winProb: winProbs[name] || 0,
+                    voteShare: voteShares[name] || 0,
+                    oldVoteShare: oldVoteShares[name] !== undefined ? oldVoteShares[name] : voteShares[name],
+                    winProbChange: (changes[name] && changes[name].win_prob_change) || 0,
+                    voteShareChange: (changes[name] && changes[name].vote_share_change) || 0,
                     color: candidateColors[name] || 'black'
                 };
             });
 
-            // -------------------------------
-            // DONUT CHART (Win Probability)
-            // -------------------------------
-
+            // DONUT CHART
             const sortedCandidates = Object.entries(candidates)
                 .sort((a, b) => b[1].winProb - a[1].winProb);
 
-            // Build custom labels with change indicators
             const donutLabels = sortedCandidates.map(([name, data]) => {
                 const change = data.winProbChange;
                 let changeSymbol = '';
-                if (Math.abs(change) >= 0.1) {  // Only show if change > 0.1%
+                if (Math.abs(change) >= 0.1) {
                     changeSymbol = change > 0 ? ` ↑${change.toFixed(1)}%` : ` ↓${Math.abs(change).toFixed(1)}%`;
                 }
                 return name + changeSymbol;
@@ -309,7 +309,7 @@
                 textinfo: 'label+percent',
                 textposition: 'outside',
                 hovertemplate: sortedCandidates.map(([name, data]) => {
-                    const changeText = data.winProbChange !== 0
+                    const changeText = Math.abs(data.winProbChange) >= 0.01
                         ? `<br>Change: ${data.winProbChange > 0 ? '+' : ''}${data.winProbChange.toFixed(1)}%`
                         : '';
                     return `<b>${name}</b><br>Win Probability: %{value:.1f}%${changeText}<extra></extra>`;
@@ -328,14 +328,10 @@
             Plotly.newPlot('donutChart', donutData, donutLayout,
                 {responsive: true, displayModeBar: false});
 
-            // -------------------------------
-            // BAR CHART (Median Vote Share with old values)
-            // -------------------------------
-
+            // BAR CHART
             const sortedByVote = Object.entries(candidates)
                 .sort((a, b) => b[1].voteShare - a[1].voteShare);
 
-            // Main bars (current values)
             const barData = [{
                 y: sortedByVote.map(([n]) => n),
                 x: sortedByVote.map(([n, d]) => d.voteShare),
@@ -349,7 +345,7 @@
                 ),
                 textposition: 'outside',
                 hovertemplate: sortedByVote.map(([name, data]) => {
-                    const changeText = data.voteShareChange !== 0
+                    const changeText = Math.abs(data.voteShareChange) >= 0.01
                         ? `<br>Change: ${data.voteShareChange > 0 ? '+' : ''}${data.voteShareChange.toFixed(1)}%`
                         : '';
                     return `<b>${name}</b><br>Vote Share: %{x:.1f}%${changeText}<extra></extra>`;
@@ -357,7 +353,7 @@
                 name: 'Current'
             }];
 
-            // Add vertical lines for old values (if different)
+            // Add vertical lines for old values
             const shapes = [];
             sortedByVote.forEach(([name, data], index) => {
                 if (Math.abs(data.voteShare - data.oldVoteShare) > 0.01) {
@@ -402,7 +398,13 @@
         })
         .catch(error => {
             console.error('Error loading JSON:', error);
-            document.getElementById('lastUpdated').textContent = 'Error loading data';
+            document.getElementById('lastUpdated').textContent = 'Error loading data - check console';
+
+            // Show error message
+            document.getElementById('donutChart').innerHTML =
+                '<p style="text-align: center; padding: 50px;">Unable to load data. Please ensure district_win_probabilities.json exists in the same directory.</p>';
+            document.getElementById('barChart').innerHTML =
+                '<p style="text-align: center; padding: 50px;">Unable to load data. Please ensure district_win_probabilities.json exists in the same directory.</p>';
         });
     </script>
 </body>
