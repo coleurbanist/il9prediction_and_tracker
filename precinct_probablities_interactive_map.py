@@ -955,6 +955,7 @@ full_html = f"""
     <div class="nav-container">
         <div class="nav-title">Cole's Election Models</div>
         <a href="index.html" class="nav-button">Home</a>
+        <a href="Chicago Mayor.html" class="nav-button">Chicago Mayoral Races</a>
     </div>
 </nav>
 
