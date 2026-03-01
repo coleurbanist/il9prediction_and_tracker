@@ -1,0 +1,97 @@
+{
+  "regions": {
+    "Chicago": {
+      "expected_turnout": 48329,
+      "turnout_share_pct": 38.7,
+      "num_precincts": 119,
+      "vote_shares": {
+        "Fine": 19.35,
+        "Biss": 27.57,
+        "Abughazaleh": 24.5,
+        "Simmons": 11.12,
+        "Amiwala": 5.01,
+        "Andrew": 6.38,
+        "Huynh": 3.07
+      },
+      "expected_votes": {
+        "Fine": 9352,
+        "Biss": 13326,
+        "Abughazaleh": 11840,
+        "Simmons": 5376,
+        "Amiwala": 2422,
+        "Andrew": 3081,
+        "Huynh": 1484
+      }
+    },
+    "Suburban Cook": {
+      "expected_turnout": 62192,
+      "turnout_share_pct": 49.7,
+      "num_precincts": 222,
+      "vote_shares": {
+        "Fine": 24.5,
+        "Biss": 34.36,
+        "Abughazaleh": 17.25,
+        "Simmons": 6.27,
+        "Amiwala": 4.66,
+        "Andrew": 6.41,
+        "Huynh": 3.11
+      },
+      "expected_votes": {
+        "Fine": 15234,
+        "Biss": 21370,
+        "Abughazaleh": 10728,
+        "Simmons": 3899,
+        "Amiwala": 2898,
+        "Andrew": 3984,
+        "Huynh": 1936
+      }
+    },
+    "Lake County": {
+      "expected_turnout": 6975,
+      "turnout_share_pct": 5.6,
+      "num_precincts": 32,
+      "vote_shares": {
+        "Fine": 29.96,
+        "Biss": 30.18,
+        "Abughazaleh": 15.7,
+        "Simmons": 5.98,
+        "Amiwala": 5.04,
+        "Andrew": 6.54,
+        "Huynh": 3.27
+      },
+      "expected_votes": {
+        "Fine": 2090,
+        "Biss": 2105,
+        "Abughazaleh": 1095,
+        "Simmons": 417,
+        "Amiwala": 351,
+        "Andrew": 456,
+        "Huynh": 228
+      }
+    },
+    "McHenry County": {
+      "expected_turnout": 7527,
+      "turnout_share_pct": 6.0,
+      "num_precincts": 63,
+      "vote_shares": {
+        "Fine": 27.21,
+        "Biss": 31.6,
+        "Abughazaleh": 16.89,
+        "Simmons": 6.6,
+        "Amiwala": 4.63,
+        "Andrew": 6.5,
+        "Huynh": 3.2
+      },
+      "expected_votes": {
+        "Fine": 2048,
+        "Biss": 2379,
+        "Abughazaleh": 1271,
+        "Simmons": 497,
+        "Amiwala": 349,
+        "Andrew": 489,
+        "Huynh": 241
+      }
+    }
+  },
+  "district_expected_turnout": 125023
+}

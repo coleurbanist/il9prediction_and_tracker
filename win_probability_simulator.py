@@ -1,51 +1,255 @@
 """
 IL-09 Primary Win Probability Simulator (Hybrid Model)
-
-This script calculates a geographically weighted undecided bias based on
-precinct-level data, then runs Monte Carlo simulations to estimate each
-candidate's probability of winning.
+Updated to include:
+  - Versioned poll_baseline.json with full history
+  - Favorability aware-rate weighting in undecided allocation (pin 1)
+  - Second-choice soft constraint for correlated candidate drift (pin 2)
+  - Senate district crosstabs passed through to poll_baseline.json
 """
 
 # ============================================================================
 # CONFIGURATION
 # ============================================================================
 
-N_SIMULATIONS = 1000000  # Number of elections to simulate
+N_SIMULATIONS = 1_000_000
 PRECINCT_DATA_FILE = 'data/csv_data/expectations/IL_09_precinct_probabilities.csv'
 
-# PULL DATA FROM THE CENTRAL FILE
-from poll_config import POLLS, UNDECIDED_ALLOCATION, CANDIDATES, house_effect
+# Pin 1 — how much favorability aware-rate blends into undecided weights
+# 0.0 = pure crosstab/geographic weights, 1.0 = pure favorability
+FAVORABILITY_BLEND = 0.25
 
-# ============================================================================
-# CROSSTAB PROCESSING
-# ============================================================================
+# Pin 2 — second-choice soft constraint
+# What fraction of a candidate's deviation from baseline routes through
+# the transfer matrix rather than floating free as random polling error.
+# 0.0 = no constraint (original behavior), 1.0 = fully deterministic transfer
+SECOND_CHOICE_CONSTRAINT_STRENGTH = 0.60
+
+# History cutoff — polls before this date form the first history snapshot
+HISTORY_CUTOFF_DATE = '2026-01-01'
+
+from poll_config import POLLS, UNDECIDED_ALLOCATION, CANDIDATES, house_effect
 
 import pandas as pd
 import numpy as np
 from datetime import datetime
 import matplotlib.pyplot as plt
 import json
+import os
 
+
+# ============================================================================
+# FAVORABILITY WEIGHTING  (Pin 1)
+# ============================================================================
+
+def compute_favorability_weights(polls):
+    """
+    Compute aware-rate favorability weights from the most recent poll
+    that contains favorability data.
+
+    aware_fav_rate = favorable / (favorable + unfavorable)
+    Normalized to mean of 1.0 across candidates.
+
+    Returns dict {candidate: weight} or {candidate: 1.0} if no fav data.
+    """
+    fav_polls = sorted(
+        [p for p in polls if p.get('favorability')],
+        key=lambda p: p['date'],
+        reverse=True
+    )
+
+    if not fav_polls:
+        return {c: 1.0 for c in CANDIDATES}
+
+    poll = fav_polls[0]
+    fav_data = poll['favorability']
+
+    print(f"\n  Using favorability from: {poll['name']}")
+    print(f"\n  {'Candidate':<16} {'Fav':>6} {'Unfav':>7} {'Aware Rate':>12} {'Weight':>8}")
+    print(f"  {'-'*55}")
+
+    raw_rates = {}
+    for cand in CANDIDATES:
+        if cand not in fav_data:
+            raw_rates[cand] = 0.5
+            continue
+        overall = fav_data[cand].get('overall', {})
+        fav = overall.get('favorable', 0)
+        unfav = overall.get('unfavorable', 0)
+        total_aware = fav + unfav
+        raw_rates[cand] = fav / total_aware if total_aware > 0 else 0.5
+
+    mean_rate = np.mean(list(raw_rates.values()))
+    weights = {}
+    for cand in CANDIDATES:
+        weights[cand] = raw_rates[cand] / mean_rate if mean_rate > 0 else 1.0
+        fav = fav_data.get(cand, {}).get('overall', {}).get('favorable', 0)
+        unfav = fav_data.get(cand, {}).get('overall', {}).get('unfavorable', 0)
+        print(f"  {cand:<16} {fav:>5}%  {unfav:>6}%  "
+              f"{raw_rates[cand]:>11.1%}  {weights[cand]:>7.3f}x")
+
+    return weights
+
+
+# ============================================================================
+# SECOND-CHOICE MATRIX AGGREGATION  (Pin 2)
+# ============================================================================
+
+def aggregate_second_choice_matrix(polls):
+    """
+    Aggregate second-choice matrices from all polls that have one,
+    weighted by recency and poll quality. Returns a normalized
+    transfer matrix: {donor: {recipient: probability}}.
+    """
+    matrix_polls = sorted(
+        [p for p in polls if p.get('second_choice_matrix')],
+        key=lambda p: p['date'],
+        reverse=True
+    )
+
+    if not matrix_polls:
+        return None
+
+    accumulated = {donor: {recip: 0.0 for recip in CANDIDATES}
+                   for donor in CANDIDATES}
+    total_weights = {donor: 0.0 for donor in CANDIDATES}
+
+    for poll in matrix_polls:
+        weight, _ = calculate_poll_weight(poll)
+        scm = poll['second_choice_matrix']
+
+        for donor in CANDIDATES:
+            if donor not in scm:
+                continue
+            choices = scm[donor]
+            named = {k: v for k, v in choices.items()
+                     if k in CANDIDATES and k != donor}
+            total_named = sum(named.values())
+            if total_named == 0:
+                continue
+            for recip, val in named.items():
+                accumulated[donor][recip] += (val / total_named) * weight
+            total_weights[donor] += weight
+
+    transfer_matrix = {}
+    no_second_rates = {}
+
+    for donor in CANDIDATES:
+        if total_weights[donor] == 0:
+            transfer_matrix[donor] = {r: 1.0 / (len(CANDIDATES) - 1)
+                                      for r in CANDIDATES if r != donor}
+            no_second_rates[donor] = 0.20
+            continue
+
+        raw = {r: accumulated[donor][r] / total_weights[donor]
+               for r in CANDIDATES if r != donor}
+        total = sum(raw.values())
+        transfer_matrix[donor] = ({r: v / total for r, v in raw.items()}
+                                   if total > 0 else raw)
+
+        no_second_vals = []
+        for poll in matrix_polls:
+            scm = poll.get('second_choice_matrix', {})
+            if donor in scm:
+                choices = scm[donor]
+                total_all = sum(choices.values())
+                no_s = choices.get('no_second', 0) + choices.get('others', 0)
+                if total_all > 0:
+                    no_second_vals.append(no_s / total_all)
+        no_second_rates[donor] = np.mean(no_second_vals) if no_second_vals else 0.20
+
+    return transfer_matrix, no_second_rates
+
+
+# ============================================================================
+# SENATE DISTRICT CROSSTAB AGGREGATION
+# ============================================================================
+
+def aggregate_senate_district_crosstabs(polls):
+    """
+    Extract senate district vote share crosstabs from polls.
+
+    Since PPP is currently the only poll with senate district data, this
+    returns those numbers directly (weighted by poll quality/recency if
+    multiple polls provide SD data in the future).
+
+    Returns dict matching the poll_config structure:
+    {
+        'sd_7':     {'Fine': 6,  'Biss': 24, ...},
+        'sd_8':     {'Fine': 14, 'Biss': 27, ...},
+        'sd_9':     {'Fine': 24, 'Biss': 27, ...},
+        'sd_other': {'Fine': 18, 'Biss': 19, ...},
+    }
+    or None if no polls contain senate district crosstabs.
+    """
+    sd_polls = sorted(
+        [p for p in polls if p.get('senate_district_crosstabs')],
+        key=lambda p: p['date'],
+        reverse=True
+    )
+
+    if not sd_polls:
+        return None
+
+    if len(sd_polls) == 1:
+        # Only one poll has SD data — pass through directly
+        result = sd_polls[0]['senate_district_crosstabs']
+        print(f"\n  Senate district crosstabs from: {sd_polls[0]['name']}")
+        for sd_key, sd_data in result.items():
+            top = sorted(
+                [(c, v) for c, v in sd_data.items() if c in CANDIDATES],
+                key=lambda x: -x[1]
+            )[:3]
+            top_str = ', '.join(f"{c}: {v}%" for c, v in top)
+            print(f"    {sd_key}: {top_str} ...")
+        return result
+
+    # Multiple polls with SD data — weighted average
+    print(f"\n  Aggregating senate district crosstabs from {len(sd_polls)} polls")
+
+    all_sd_keys = set()
+    for p in sd_polls:
+        all_sd_keys.update(p['senate_district_crosstabs'].keys())
+
+    accumulated = {sd: {c: 0.0 for c in CANDIDATES + ['undecided']}
+                   for sd in all_sd_keys}
+    total_weights = {sd: 0.0 for sd in all_sd_keys}
+
+    for poll in sd_polls:
+        weight, _ = calculate_poll_weight(poll)
+        for sd_key, sd_data in poll['senate_district_crosstabs'].items():
+            for cand, val in sd_data.items():
+                if cand in accumulated[sd_key]:
+                    accumulated[sd_key][cand] += val * weight
+            total_weights[sd_key] += weight
+
+    result = {}
+    for sd_key in all_sd_keys:
+        if total_weights[sd_key] > 0:
+            result[sd_key] = {
+                c: accumulated[sd_key][c] / total_weights[sd_key]
+                for c in accumulated[sd_key]
+                if accumulated[sd_key][c] > 0
+            }
+
+    return result
+
+
+# ============================================================================
+# CROSSTAB PROCESSING
+# ============================================================================
 
 def calculate_crosstab_moe(sample_size):
-    """Calculate margin of error for crosstab subgroups"""
     if sample_size < 30:
-        return 20.0  # Very unreliable
+        return 20.0
     return (1 / np.sqrt(sample_size)) * 100
 
 
 def aggregate_crosstabs(polls):
-    """
-    Aggregate crosstabs across polls, weighted by recency, quality, and sample size.
-    Returns averaged crosstabs scaled to current polling average.
-    """
     print("\n" + "=" * 70)
     print("AGGREGATING CROSSTABS")
     print("=" * 70)
 
-    # Find polls with crosstabs
     crosstab_polls = [p for p in polls if p.get('has_crosstabs', False)]
-
     if not crosstab_polls:
         print("No polls with crosstabs available.")
         return None, None
@@ -54,58 +258,45 @@ def aggregate_crosstabs(polls):
     for poll in crosstab_polls:
         print(f"  - {poll['name']}")
 
-    # Get all unique demographic categories
     all_demographics = set()
     for poll in crosstab_polls:
         for cand in CANDIDATES:
-            if cand in poll['crosstabs']:
+            if cand in poll.get('crosstabs', {}):
                 all_demographics.update(poll['crosstabs'][cand].keys())
 
-    # Initialize aggregation
-    weighted_crosstabs = {cand: {demo: 0.0 for demo in all_demographics} for cand in CANDIDATES}
-    total_weights = {cand: {demo: 0.0 for demo in all_demographics} for cand in CANDIDATES}
+    weighted_crosstabs = {cand: {demo: 0.0 for demo in all_demographics}
+                          for cand in CANDIDATES}
+    total_weights = {cand: {demo: 0.0 for demo in all_demographics}
+                     for cand in CANDIDATES}
     crosstab_moes = {demo: [] for demo in all_demographics}
 
-    # Aggregate with weighting
     for poll in crosstab_polls:
-        # Calculate poll weight (similar to main poll weighting)
         poll_weight, _ = calculate_poll_weight(poll)
-
         for cand in CANDIDATES:
-            if cand not in poll['crosstabs']:
+            if cand not in poll.get('crosstabs', {}):
                 continue
-
             for demo, pct in poll['crosstabs'][cand].items():
-                # Get sample size for this demographic
-                sample_size = poll.get('crosstab_sample_sizes', {}).get(demo, poll['sample_size'] * 0.2)
-
-                # Weight by both poll quality and subsample size
-                subsample_weight = np.sqrt(sample_size) / 10  # Normalize
+                sample_size = poll.get('crosstab_sample_sizes', {}).get(
+                    demo, poll['sample_size'] * 0.2)
+                subsample_weight = np.sqrt(sample_size) / 10
                 combined_weight = poll_weight * subsample_weight
-
                 weighted_crosstabs[cand][demo] += pct * combined_weight
                 total_weights[cand][demo] += combined_weight
-
-                # Track MOE for this demographic
                 moe = calculate_crosstab_moe(sample_size)
                 crosstab_moes[demo].append(moe)
 
-    # Calculate weighted averages
     averaged_crosstabs = {cand: {} for cand in CANDIDATES}
     for cand in CANDIDATES:
         for demo in all_demographics:
             if total_weights[cand][demo] > 0:
-                averaged_crosstabs[cand][demo] = weighted_crosstabs[cand][demo] / total_weights[cand][demo]
+                averaged_crosstabs[cand][demo] = (
+                    weighted_crosstabs[cand][demo] / total_weights[cand][demo])
             else:
                 averaged_crosstabs[cand][demo] = 0
 
-    # Calculate average MOE per demographic
-    avg_demo_moes = {}
-    for demo in all_demographics:
-        if crosstab_moes[demo]:
-            avg_demo_moes[demo] = np.mean(crosstab_moes[demo])
-        else:
-            avg_demo_moes[demo] = 10.0  # Default
+    avg_demo_moes = {demo: (np.mean(crosstab_moes[demo])
+                            if crosstab_moes[demo] else 10.0)
+                     for demo in all_demographics}
 
     print("\nCrosstab Margins of Error by Demographic:")
     print(f"{'Demographic':<20s} {'Avg MOE':<10s} {'Reliability':<15s}")
@@ -117,13 +308,8 @@ def aggregate_crosstabs(polls):
     return averaged_crosstabs, avg_demo_moes
 
 
-def scale_crosstabs_to_polling_average(averaged_crosstabs, baseline_avg, crosstab_polls):
-    """
-    Scale crosstabs from their original poll averages to current polling average.
-
-    Logic: If Fine was 10% when crosstabs were taken but is now 20% in polling average,
-    scale all her demographic crosstabs proportionally.
-    """
+def scale_crosstabs_to_polling_average(averaged_crosstabs, baseline_avg,
+                                        crosstab_polls):
     if not averaged_crosstabs:
         return None
 
@@ -131,131 +317,72 @@ def scale_crosstabs_to_polling_average(averaged_crosstabs, baseline_avg, crossta
     print("SCALING CROSSTABS TO CURRENT POLLING AVERAGE")
     print("=" * 70)
 
-    # Calculate the average poll result at the time crosstabs were taken
     crosstab_baseline = {}
     total_weight = 0
-
     for poll in crosstab_polls:
         weight, _ = calculate_poll_weight(poll)
         for cand in CANDIDATES:
-            crosstab_baseline[cand] = crosstab_baseline.get(cand, 0) + poll['results'].get(cand, 0) * weight
+            crosstab_baseline[cand] = (crosstab_baseline.get(cand, 0)
+                                       + poll['results'].get(cand, 0) * weight)
         total_weight += weight
 
     for cand in CANDIDATES:
         crosstab_baseline[cand] /= total_weight
 
-    # Scale each candidate's crosstabs
     scaled_crosstabs = {cand: {} for cand in CANDIDATES}
 
-    print(f"\n{'Candidate':<15s} {'Crosstab Base':<15s} {'Current Avg':<15s} {'Scaling Factor':<15s}")
+    print(f"\n{'Candidate':<15s} {'Crosstab Base':<15s} "
+          f"{'Current Avg':<15s} {'Scaling Factor':<15s}")
     print("-" * 70)
 
     for cand in CANDIDATES:
         original_pct = crosstab_baseline.get(cand, 0)
         current_pct = baseline_avg.get(cand, 0)
+        scaling_factor = current_pct / original_pct if original_pct > 0 else 1.0
+        print(f"{cand:<15s} {original_pct:>7.1f}%        "
+              f"{current_pct:>7.1f}%        {scaling_factor:>7.2f}x")
 
-        if original_pct > 0:
-            scaling_factor = current_pct / original_pct
-        else:
-            scaling_factor = 1.0
-
-        print(f"{cand:<15s} {original_pct:>7.1f}%        {current_pct:>7.1f}%        {scaling_factor:>7.2f}x")
-
-        # Apply scaling with ceiling
         for demo, pct in averaged_crosstabs[cand].items():
-            # Use diminishing returns for already-strong demographics
             if pct < 5:
                 scaled_pct = pct * scaling_factor
             elif pct < 15:
                 scaled_pct = pct * (scaling_factor ** 0.85)
             else:
                 scaled_pct = pct * (scaling_factor ** 0.7)
-
-            # Cap at 95% (can't have 100% of a demographic)
             scaled_crosstabs[cand][demo] = min(scaled_pct, 95.0)
-
-    # Show examples
-    print("\nExample Scaled Crosstabs (Fine):")
-    print(f"{'Demographic':<20s} {'Original':<12s} {'Scaled':<12s}")
-    print("-" * 50)
-    for demo in list(averaged_crosstabs['Fine'].keys())[:5]:
-        orig = averaged_crosstabs['Fine'][demo]
-        scaled = scaled_crosstabs['Fine'][demo]
-        print(f"{demo:<20s} {orig:>7.1f}%      {scaled:>7.1f}%")
 
     return scaled_crosstabs
 
 
-def map_age_bucket(median_age, crosstabs):
-    """
-    Map precinct median age to crosstab age buckets with interpolation.
-    Returns weighted support across adjacent buckets.
-    """
-    # Age bucket midpoints and ranges because crosstabs do not match my buckets
-    buckets = [
-        ('age_18-29', 18, 29, 23.5),
-        ('age_30-44', 30, 44, 37),
-        ('age_45-65', 45, 65, 55),
-        ('age_65+', 65, 100, 72.5)
-    ]
-
-    # Find which bucket(s) this age falls into
-    for i, (name, low, high, midpoint) in enumerate(buckets):
-        if median_age <= high:
-            if median_age < low and i > 0:
-                # Interpolate between previous and current bucket
-                prev_name, prev_low, prev_high, prev_mid = buckets[i-1]
-                weight = (median_age - prev_mid) / (midpoint - prev_mid)
-                weight = np.clip(weight, 0, 1)
-
-                prev_val = crosstabs.get(prev_name, 0)
-                curr_val = crosstabs.get(name, 0)
-                return prev_val * (1 - weight) + curr_val * weight
-            else:
-                # Directly in this bucket
-                return crosstabs.get(name, 0)
-
-    # Default to oldest bucket
-    return crosstabs.get('age_65+', 0)
-
-
-def map_ideology_to_crosstab(prog_score, crosstabs):
-    """
-    Map prog_score to ideology crosstabs.
-    prog_score: -1 (very moderate) to +1 (very progressive)
-    """
-    if prog_score > 0.5:
-        return crosstabs.get('very_liberal', 0)
-    elif prog_score > 0:
-        # Interpolate between somewhat_liberal and very_liberal
-        weight = prog_score / 0.5
-        somewhat = crosstabs.get('somewhat_liberal', 0)
-        very = crosstabs.get('very_liberal', 0)
-        return somewhat * (1 - weight) + very * weight
-    elif prog_score > -0.5:
-        # Interpolate between moderate and somewhat_liberal
-        weight = (prog_score + 0.5) / 0.5
-        moderate = crosstabs.get('moderate', 0)
-        somewhat = crosstabs.get('somewhat_liberal', 0)
-        return moderate * (1 - weight) + somewhat * weight
+def map_age_to_crosstab(median_age, crosstabs):
+    if median_age < 30:
+        return crosstabs.get('age_18-29', 0)
+    if median_age >= 65:
+        return crosstabs.get('age_65+', 0)
+    if 30 <= median_age < 45:
+        lower = crosstabs.get('age_30-44', 0)
+        upper = crosstabs.get('age_45-65', 0)
+        weight = (median_age - 37) / (55 - 37)
     else:
-        return crosstabs.get('moderate', 0)
+        lower = crosstabs.get('age_45-65', 0)
+        upper = crosstabs.get('age_65+', 0)
+        weight = (median_age - 55) / (72.5 - 55)
+    weight = np.clip(weight, 0, 1)
+    return lower * (1 - weight) + upper * weight
 
 
 # ============================================================================
-# PRECINCT BIAS ENGINE (Enhanced with Crosstabs)
+# PRECINCT BIAS ENGINE
 # ============================================================================
 
-def calculate_district_wide_undecided_bias(scaled_crosstabs=None):
+def calculate_district_wide_undecided_bias(scaled_crosstabs=None,
+                                            fav_weights=None):
     """
-    Loads precinct data and calculates district-wide undecided bias weights
-    by aggregating precinct-level crosstab-based support estimates.
+    Calculates district-wide undecided bias weights.
 
-    For each precinct:
-    - Determine demographic profile (ideology, age, race)
-    - Look up support in crosstabs
-    - Weight undecided allocation proportionally (with floor of 1 for 0% support)
-    - Aggregate across district weighted by turnout
+    Blends two signals:
+      1. Crosstab/geographic weights  — (1 - FAVORABILITY_BLEND)
+      2. Favorability aware-rate weights (Pin 1) — FAVORABILITY_BLEND
     """
     print(f"Loading precinct data from {PRECINCT_DATA_FILE}...")
     try:
@@ -264,218 +391,123 @@ def calculate_district_wide_undecided_bias(scaled_crosstabs=None):
         print(f"WARNING: {PRECINCT_DATA_FILE} not found. Using neutral weights.")
         return {c: 1.0 for c in CANDIDATES}
 
-    # Ensure required columns exist
-    required_cols = ['prog_score_imputed', 'total_votes_projected', 'undecided_pct']
-    for col in required_cols:
+    for col in ['prog_score_imputed', 'total_votes_projected', 'undecided_pct']:
         if col not in df.columns:
-            if col == 'undecided_pct':
-                df[col] = 0.25
-            elif col == 'prog_score_imputed':
-                df[col] = 0
-            elif col == 'total_votes_projected':
-                df[col] = 500
+            df[col] = {'undecided_pct': 0.25,
+                       'prog_score_imputed': 0,
+                       'total_votes_projected': 500}[col]
 
-    # Add demographic columns if missing
-    if 'median_voting_age' not in df.columns:
-        df['median_voting_age'] = 50
-    if 'V_20_VAP_Black_pct' not in df.columns:
-        df['V_20_VAP_Black_pct'] = 0.0
-    if 'V_20_VAP_Asian_pct' not in df.columns:
-        df['V_20_VAP_Asian_pct'] = 0.0
+    for col, default in [('median_voting_age', 50),
+                          ('V_20_VAP_Black_pct', 0.0),
+                          ('V_20_VAP_Asian_pct', 0.0)]:
+        if col not in df.columns:
+            df[col] = default
 
-    # Define ideology thresholds (divide into thirds)
     prog_scores = df['prog_score_imputed'].dropna()
-    if len(prog_scores) > 0:
-        moderate_threshold = prog_scores.quantile(0.333)
-        somewhat_lib_threshold = prog_scores.quantile(0.667)
-    else:
-        moderate_threshold = -0.3
-        somewhat_lib_threshold = 0.3
+    moderate_threshold    = prog_scores.quantile(0.333) if len(prog_scores) > 0 else -0.3
+    somewhat_lib_threshold = prog_scores.quantile(0.667) if len(prog_scores) > 0 else  0.3
 
-    print(f"\nIdeology thresholds:")
-    print(f"  Moderate: prog_score <= {moderate_threshold:.3f}")
-    print(f"  Somewhat Liberal: {moderate_threshold:.3f} < prog_score <= {somewhat_lib_threshold:.3f}")
-    print(f"  Very Liberal: prog_score > {somewhat_lib_threshold:.3f}")
-
-    # Initialize weighted vote buckets
     weighted_counts = {c: 0.0 for c in CANDIDATES}
     total_undecided_mass = 0.0
 
-    # --- USE CROSSTABS IF AVAILABLE ---
     if scaled_crosstabs:
-        print("\nUsing crosstab-based undecided allocation...")
-
         for _, row in df.iterrows():
-            # Estimate raw number of undecided voters in this precinct
-            n_undecided = row.get('total_votes_projected', 500) * row.get('undecided_pct', 0.25)
+            n_undecided = (row.get('total_votes_projected', 500)
+                           * row.get('undecided_pct', 0.25))
             total_undecided_mass += n_undecided
 
-            # Get precinct demographics
             prog_score = row.get('prog_score_imputed', 0)
             median_age = row.get('median_voting_age', 50)
-            black_pct = row.get('V_20_VAP_Black_pct', 0)
-            asian_pct = row.get('V_20_VAP_Asian_pct', 0)
-            white_pct = max(0, 100 - black_pct - asian_pct)
+            black_pct  = row.get('V_20_VAP_Black_pct', 0)
+            asian_pct  = row.get('V_20_VAP_Asian_pct', 0)
+            white_pct  = max(0, 100 - black_pct - asian_pct)
 
-            # Calculate support for each candidate in this precinct
             precinct_support = {}
-
             for cand in CANDIDATES:
                 if cand not in scaled_crosstabs:
-                    precinct_support[cand] = 1.0  # Floor
+                    precinct_support[cand] = 1.0
                     continue
 
                 crosstabs = scaled_crosstabs[cand]
                 support_components = []
 
-                # 1. IDEOLOGY COMPONENT
                 if prog_score <= moderate_threshold:
-                    ideology_support = crosstabs.get('moderate', 0)
+                    support_components.append(crosstabs.get('moderate', 0))
                 elif prog_score <= somewhat_lib_threshold:
-                    ideology_support = crosstabs.get('somewhat_liberal', 0)
+                    support_components.append(crosstabs.get('somewhat_liberal', 0))
                 else:
-                    ideology_support = crosstabs.get('very_liberal', 0)
+                    support_components.append(crosstabs.get('very_liberal', 0))
 
-                support_components.append(ideology_support)
+                support_components.append(map_age_to_crosstab(median_age, crosstabs))
 
-                # 2. AGE COMPONENT
-                age_support = map_age_to_crosstab(median_age, crosstabs)
-                support_components.append(age_support)
-
-                # 3. RACIAL/ETHNIC COMPONENT (composite based on precinct composition)
                 white_support = crosstabs.get('white', 0)
-
-                # Estimate Black support
-                if 'black' in crosstabs:
-                    black_support = crosstabs['black']
-                else:
-                    # Use heuristics for candidates without Black crosstabs
-                    if cand == 'Simmons':
-                        black_support = white_support * 3.0 if white_support > 0 else 15.0
-                    elif cand in ['Abughazaleh', 'Huynh', 'Amiwala']:
-                        black_support = white_support * 0.8 if white_support > 0 else 5.0
-                    else:
-                        black_support = white_support if white_support > 0 else 5.0
-
-                # Estimate Asian support
-                if 'asian' in crosstabs:
-                    asian_support = crosstabs['asian']
-                else:
-                    if cand == 'Huynh':
-                        asian_support = white_support * 2.5 if white_support > 0 else 15.0
-                    elif cand == 'Amiwala':
-                        asian_support = white_support * 2.0 if white_support > 0 else 12.0
-                    else:
-                        asian_support = white_support * 0.8 if white_support > 0 else 5.0
-
-                # Composite racial support
-                racial_support = (
-                        (white_pct / 100) * white_support +
-                        (black_pct / 100) * black_support +
-                        (asian_pct / 100) * asian_support
-                )
+                black_support = (crosstabs['black'] if 'black' in crosstabs
+                                 else white_support * 3.0 if cand == 'Simmons'
+                                 else white_support * 0.8)
+                asian_support = (crosstabs['asian'] if 'asian' in crosstabs
+                                 else white_support * 2.5 if cand == 'Huynh'
+                                 else white_support * 2.0 if cand == 'Amiwala'
+                                 else white_support * 0.8)
+                racial_support = ((white_pct / 100) * white_support
+                                  + (black_pct / 100) * black_support
+                                  + (asian_pct / 100) * asian_support)
                 support_components.append(racial_support)
 
-                # Average across components
-                avg_support = np.mean(support_components)
+                precinct_support[cand] = max(np.mean(support_components), 1.0)
 
-                # Apply floor of 1 for 0% support (everyone has a chance)
-                precinct_support[cand] = max(avg_support, 1.0)
-
-            # Add this precinct's weighted contribution
             for cand in CANDIDATES:
                 weighted_counts[cand] += n_undecided * precinct_support[cand]
 
     else:
-        # --- FALLBACK LOGIC (rule-based weights) ---
-        print("\nNo crosstabs available, using rule-based weights...")
-
         for _, row in df.iterrows():
-            n_undecided = row.get('total_votes_projected', 500) * row.get('undecided_pct', 0.25)
+            n_undecided = (row.get('total_votes_projected', 500)
+                           * row.get('undecided_pct', 0.25))
             total_undecided_mass += n_undecided
-
-            region = str(row.get('region', 'Other')).lower()
             prog_score = row.get('prog_score_imputed', 0)
-
-            # Start with neutral weight of 1.0 for everyone
             w = {c: 1.0 for c in CANDIDATES}
-
-            # Ideology-based weights
             if prog_score <= moderate_threshold:
-                w['Fine'] *= 1.4
-                w['Andrew'] *= 1.3
-                w['Biss'] *= 0.9
-                w['Abughazaleh'] *= 0.7
-                w['Simmons'] *= 0.7
+                w['Fine'] *= 1.4; w['Andrew'] *= 1.3
+                w['Biss'] *= 0.9; w['Abughazaleh'] *= 0.7
             elif prog_score <= somewhat_lib_threshold:
-                w['Biss'] *= 1.3
-                w['Fine'] *= 1.0
-                w['Abughazaleh'] *= 1.1
+                w['Biss'] *= 1.3; w['Abughazaleh'] *= 1.1
             else:
-                w['Abughazaleh'] *= 1.4
-                w['Simmons'] *= 1.3
-                w['Amiwala'] *= 1.2
-                w['Biss'] *= 1.1
-                w['Fine'] *= 0.7
-
-            # Regional adjustments
-            if 'evanston' in region:
-                w['Biss'] *= 0.6
-            if 'niles' in region:
-                w['Amiwala'] *= 1.4
-
+                w['Abughazaleh'] *= 1.4; w['Simmons'] *= 1.3
+                w['Amiwala'] *= 1.2; w['Fine'] *= 0.7
             for cand in CANDIDATES:
                 weighted_counts[cand] += n_undecided * w[cand]
 
-    # Normalize into final weights relative to 1.0
-    final_weights = {}
     if total_undecided_mass > 0:
-        # Calculate average weight per candidate
-        avg_weights = {cand: weighted_counts[cand] / total_undecided_mass for cand in CANDIDATES}
-
-        # Normalize to mean of 1.0
+        avg_weights = {c: weighted_counts[c] / total_undecided_mass
+                       for c in CANDIDATES}
         mean_weight = np.mean(list(avg_weights.values()))
-        if mean_weight > 0:
-            final_weights = {cand: avg_weights[cand] / mean_weight for cand in CANDIDATES}
-        else:
-            final_weights = {c: 1.0 for c in CANDIDATES}
+        geo_weights = ({c: avg_weights[c] / mean_weight for c in CANDIDATES}
+                       if mean_weight > 0 else {c: 1.0 for c in CANDIDATES})
     else:
-        final_weights = {c: 1.0 for c in CANDIDATES}
+        geo_weights = {c: 1.0 for c in CANDIDATES}
+
+    if fav_weights is None:
+        fav_weights = {c: 1.0 for c in CANDIDATES}
+
+    final_weights = {
+        cand: ((1.0 - FAVORABILITY_BLEND) * geo_weights[cand]
+               + FAVORABILITY_BLEND * fav_weights[cand])
+        for cand in CANDIDATES
+    }
+
+    mean_final = np.mean(list(final_weights.values()))
+    if mean_final > 0:
+        final_weights = {c: final_weights[c] / mean_final for c in CANDIDATES}
+
+    print(f"\n  Undecided weights (geo {1-FAVORABILITY_BLEND:.0%} / "
+          f"fav {FAVORABILITY_BLEND:.0%} blend):")
+    for cand in CANDIDATES:
+        geo   = geo_weights.get(cand, 1.0)
+        fav   = fav_weights.get(cand, 1.0)
+        final = final_weights[cand]
+        print(f"    {cand:<16}: geo={geo:.3f}x  fav={fav:.3f}x  "
+              f"→ final={final:.3f}x")
 
     return final_weights
-
-
-def map_age_to_crosstab(median_age, crosstabs):
-    """
-    Map precinct median age to crosstab age buckets with interpolation.
-    Returns weighted support across adjacent buckets.
-    """
-    # Age bucket definitions (name, min, max, midpoint)
-    buckets = [
-        ('age_18-29', 18, 29, 23.5),
-        ('age_30-44', 30, 44, 37),
-        ('age_45-65', 45, 65, 55),
-        ('age_65+', 65, 100, 72.5)
-    ]
-
-    # Handle edge cases
-    if median_age < 30:
-        return crosstabs.get('age_18-29', 0)
-    if median_age >= 65:
-        return crosstabs.get('age_65+', 0)
-
-    # Find which buckets to interpolate between
-    if 30 <= median_age < 45:
-        lower = crosstabs.get('age_30-44', 0)
-        upper = crosstabs.get('age_45-65', 0)
-        weight = (median_age - 37) / (55 - 37)
-    else:  # 45 <= median_age < 65
-        lower = crosstabs.get('age_45-65', 0)
-        upper = crosstabs.get('age_65+', 0)
-        weight = (median_age - 55) / (72.5 - 55)
-
-    weight = np.clip(weight, 0, 1)
-    return lower * (1 - weight) + upper * weight
 
 
 # ============================================================================
@@ -487,32 +519,20 @@ def calculate_margin_of_error(sample_size):
 
 
 def apply_house_effect(poll):
-    candidates = ['Fine', 'Biss', 'Abughazaleh', 'Simmons', 'Amiwala', 'Andrew', 'Huynh', 'Others']
-
-    # If not an internal poll, no adjustment needed
     if not poll.get('is_internal', False):
         return poll['results'].copy(), poll.get('undecided', 0)
-
     internal_candidate = poll.get('internal_for')
     adjustment = poll.get('house_effect_adjustment', 0)
-
-    # If no adjustment specified, return as-is
     if not internal_candidate or adjustment == 0:
         return poll['results'].copy(), poll.get('undecided', 0)
-
     adjusted_results = poll['results'].copy()
     current_undecided = poll.get('undecided', 0)
-
-    # Take from the internal candidate and add to undecided
     if internal_candidate in adjusted_results:
-        original_value = adjusted_results[internal_candidate]
-        adjusted_results[internal_candidate] = max(0, original_value - adjustment)
-
-        # Add the adjustment to undecided instead of other candidates
+        adjusted_results[internal_candidate] = max(
+            0, adjusted_results[internal_candidate] - adjustment)
         new_undecided = current_undecided + adjustment
     else:
         new_undecided = current_undecided
-
     return adjusted_results, new_undecided
 
 
@@ -539,51 +559,53 @@ def compute_trend_signal(polls, decay_half_life_days=30):
     diversity_multiplier = 1.0 if len(pollster_count) > 1 else 0.4
     if trend_raw:
         max_abs = max(abs(v) for v in trend_raw.values()) or 1
-        return {cand: (trend_raw.get(cand, 0) / max_abs) * diversity_multiplier for cand in trend_raw}
+        return {cand: (trend_raw.get(cand, 0) / max_abs) * diversity_multiplier
+                for cand in trend_raw}
     return {}
 
 
 def calculate_poll_weight(poll):
     quality_weight = poll['pollster_quality']
-    moe = poll.get('margin_of_error', calculate_margin_of_error(poll['sample_size']))
+    moe = poll.get('margin_of_error',
+                   calculate_margin_of_error(poll['sample_size']))
     moe_weight = 100 / moe
     poll_date = datetime.strptime(poll['date'], '%Y-%m-%d')
     days_old = (datetime.now() - poll_date).days
-    recency_weight = 1.0 if days_old <= 7 else 0.5 ** ((days_old - 7) / 14)
+    recency_weight = (1.0 if days_old <= 7
+                      else 0.5 ** ((days_old - 7) / 14))
     internal_penalty = 0.5 if poll.get('is_internal', False) else 1.0
     return quality_weight * moe_weight * recency_weight * internal_penalty, moe
 
 
 def aggregate_polls(polls):
-    candidates = ['Fine', 'Biss', 'Abughazaleh', 'Simmons', 'Amiwala', 'Andrew', 'Huynh', 'Others']
+    candidates = CANDIDATES + ['Others']
     poll_weights = []
     adjusted_polls = []
-    adjusted_undecideds = []  # NEW: Track adjusted undecided values
+    adjusted_undecideds = []
 
     for poll in polls:
-        adjusted_results, adjusted_undecided = apply_house_effect(poll)  # UPDATED: Now returns tuple
+        adjusted_results, adjusted_undecided = apply_house_effect(poll)
         adjusted_poll = poll.copy()
         adjusted_poll['results'] = adjusted_results
         adjusted_polls.append(adjusted_poll)
-        adjusted_undecideds.append(adjusted_undecided)  # NEW: Store adjusted undecided
+        adjusted_undecideds.append(adjusted_undecided)
         weight, moe = calculate_poll_weight(poll)
         poll_weights.append(weight)
 
     total_weight = sum(poll_weights)
     weighted_results = {}
-
     for cand in candidates:
-        weighted_sum = sum(poll['results'].get(cand, 0) * weight for poll, weight in zip(adjusted_polls, poll_weights))
+        weighted_sum = sum(poll['results'].get(cand, 0) * weight
+                           for poll, weight in zip(adjusted_polls, poll_weights))
         weighted_results[cand] = weighted_sum / total_weight
 
     total_named = sum(weighted_results[c] for c in candidates if c != 'Others')
-
-    # Use adjusted undecided values instead of original
-    undecided = sum(adj_und * weight for adj_und, weight in zip(adjusted_undecideds, poll_weights)) / total_weight
-
+    undecided = (sum(u * w for u, w in zip(adjusted_undecideds, poll_weights))
+                 / total_weight)
     weighted_results['Others'] = max(0, 100 - total_named - undecided)
 
     return weighted_results, undecided
+
 
 def calculate_average_moe(polls):
     weights = []
@@ -596,53 +618,74 @@ def calculate_average_moe(polls):
 
 
 def allocate_smart_undecideds(undecided_pct, baseline, composite_weights):
-    """
-    Allocates undecideds using the pre-calculated composite weights
-    derived from precinct-level data.
-    """
     candidates = [c for c in baseline.keys() if c != 'Others']
     allocation = {c: 0.0 for c in candidates}
-
-    # Calculate the weighted share for each candidate
     weighted_shares = {}
     total_share = 0
-
     for cand in candidates:
-        base_support = baseline.get(cand, 0)
-        # Apply the geographic composite weight
-        weight = composite_weights.get(cand, 1.0)
-
-        # Undecideds follow baseline support biased by the weight
-        share = base_support * weight
+        share = baseline.get(cand, 0) * composite_weights.get(cand, 1.0)
         weighted_shares[cand] = share
         total_share += share
-
     if total_share == 0:
         return allocation
-
-    # Distribute the undecided bucket
     for cand in candidates:
         allocation[cand] = undecided_pct * (weighted_shares[cand] / total_share)
-
     return allocation
 
 
-def simulate_election(baseline, undecided_pct, avg_moe, trend_signal, composite_weights):
-    candidates = ['Fine', 'Biss', 'Abughazaleh', 'Simmons', 'Amiwala', 'Andrew', 'Huynh']
+def simulate_election(baseline, undecided_pct, avg_moe, trend_signal,
+                       composite_weights, transfer_matrix=None,
+                       no_second_rates=None):
+    """
+    Runs one election simulation.
+
+    Pin 2: If transfer_matrix is provided, candidate deviations from baseline
+    are partially routed through second-choice transfers rather than floating
+    free. SECOND_CHOICE_CONSTRAINT_STRENGTH controls the fraction.
+    """
+    candidates = CANDIDATES
     results = {}
-    PRIMARY_VOLATILITY = 2.75 #primaries are much more volatile than general elections
-    TREND_STRENGTH = 0.15 #might need to revisit because the only trend between the same pollster
-    #is two Fine internals
+    PRIMARY_VOLATILITY = 2.75
+    TREND_STRENGTH = 0.15
     TREND_NOISE = 0.3
 
-    # 1. Base Variability & Trend
+    # 1. Draw raw errors
     for cand in candidates:
         trend_effect = trend_signal.get(cand, 0) * TREND_STRENGTH * avg_moe
-        trend_noise = np.random.normal(0, TREND_NOISE * avg_moe)
-        error = np.random.normal(0, avg_moe * 0.5 * PRIMARY_VOLATILITY)
+        trend_noise  = np.random.normal(0, TREND_NOISE * avg_moe)
+        error        = np.random.normal(0, avg_moe * 0.5 * PRIMARY_VOLATILITY)
         results[cand] = max(0, baseline.get(cand, 0) + error + trend_effect + trend_noise)
 
-    # 2. Breakout Events
+    # 2. Pin 2 — Second-choice soft constraint
+    if transfer_matrix and no_second_rates:
+        transfer_adjustments = {c: 0.0 for c in candidates}
+
+        for donor in candidates:
+            deviation = results[donor] - baseline.get(donor, 0)
+            if deviation >= 0:
+                continue
+            loss = abs(deviation)
+            constrained_loss = loss * SECOND_CHOICE_CONSTRAINT_STRENGTH
+            transfer_adjustments[donor] += constrained_loss
+
+            probs = transfer_matrix.get(donor, {})
+            no_second = no_second_rates.get(donor, 0.20)
+            transferable_share = 1.0 - no_second
+            active_recipients = {r: p for r, p in probs.items()
+                                  if r in candidates and r != donor}
+            active_total = sum(active_recipients.values())
+
+            if active_total > 0:
+                for recip, prob in active_recipients.items():
+                    transfer_adjustments[recip] -= (
+                        constrained_loss * transferable_share
+                        * (prob / active_total)
+                    )
+
+        for cand in candidates:
+            results[cand] = max(0, results[cand] - transfer_adjustments[cand])
+
+    # 3. Breakout events
     if np.random.rand() < 0.05:
         eligible = [c for c in candidates if results[c] < 15]
         if eligible:
@@ -650,146 +693,366 @@ def simulate_election(baseline, undecided_pct, avg_moe, trend_signal, composite_
 
     undecided_votes = undecided_pct
 
-    # 3. Late Surge "Other" Breakout
+    # 4. Late surge breakout
     if np.random.rand() < 0.25:
         results['Other_Breakout'] = np.random.uniform(0.3, 0.7) * undecided_pct
 
-    # 4. ALLOCATE UNDECIDEDS (The Hybrid/Smart Step)
-    # We use the calculated composite_weights for the proportional share
+    # 5. Smart undecided allocation
     smart_allocation = allocate_smart_undecideds(
         undecided_votes * UNDECIDED_ALLOCATION['proportional'],
-        baseline,
-        composite_weights
+        baseline, composite_weights
     )
-
     for cand, votes in smart_allocation.items():
         if cand in results:
             results[cand] += votes
 
-    # 5. Bandwagon Effect (Top candidates get extra undecideds)
+    # 6. Bandwagon effect
     sorted_cands = sorted(results.items(), key=lambda x: x[1], reverse=True)
     top_3 = [c for c, v in sorted_cands[:3]]
     top_total = sum(results[c] for c in top_3)
     if top_total > 0:
         for cand in top_3:
-            results[cand] += (results[cand] / top_total) * (undecided_votes * UNDECIDED_ALLOCATION['top_candidates'])
+            results[cand] += ((results[cand] / top_total)
+                              * (undecided_votes * UNDECIDED_ALLOCATION['top_candidates']))
 
-    # 6. Random Noise Allocation
+    # 7. Random noise
     for cand in candidates:
-        results[cand] += np.random.uniform(0, (undecided_votes * UNDECIDED_ALLOCATION['random']) / len(candidates) * 2)
+        results[cand] += np.random.uniform(
+            0,
+            (undecided_votes * UNDECIDED_ALLOCATION['random']) / len(candidates) * 2
+        )
 
-    # Normalize to 100%
+    # Normalize
     total = sum(results.values())
     if total > 0:
         for cand in results:
             results[cand] = (results[cand] / total) * 100
+
     return results
 
+
+# ============================================================================
+# MONTE CARLO
+# ============================================================================
 
 def run_monte_carlo(polls, n_simulations=N_SIMULATIONS):
     print("=" * 70)
     print("MONTE CARLO WIN PROBABILITY SIMULATION")
     print("=" * 70)
 
-    # Calculate baseline
     baseline, undecided_pct = aggregate_polls(polls)
     avg_moe = calculate_average_moe(polls)
     trend_signal = compute_trend_signal(polls)
 
-    # --- PROCESS CROSSTABS ---
+    # Crosstabs
     crosstab_polls = [p for p in polls if p.get('has_crosstabs', False)]
-
-    averaged_crosstabs = None
-    scaled_crosstabs = None
-    crosstab_moes = None
-
+    averaged_crosstabs = scaled_crosstabs = crosstab_moes = None
     if crosstab_polls:
         averaged_crosstabs, crosstab_moes = aggregate_crosstabs(polls)
         if averaged_crosstabs:
             scaled_crosstabs = scale_crosstabs_to_polling_average(
-                averaged_crosstabs,
-                baseline,
-                crosstab_polls
-            )
-            # NEW: Print the scaled crosstabs
+                averaged_crosstabs, baseline, crosstab_polls)
             print_crosstab_summary(scaled_crosstabs)
 
-    # --- CALCULATE PRECINCT BIAS WEIGHTS ---
-    print("\nCalculating precinct-level undecided biases...")
-    composite_weights = calculate_district_wide_undecided_bias(scaled_crosstabs)
-    print("Composite Undecided Weights Calculated:")
-    for c, w in composite_weights.items():
-        if w != 1.0:
-            print(f"  {c:<15s}: {w:.2f}x multiplier")
+    # Pin 1 — Favorability weights
+    print("\n" + "=" * 70)
+    print("FAVORABILITY AWARE-RATE WEIGHTS  (Pin 1)")
+    print("=" * 70)
+    fav_weights = compute_favorability_weights(polls)
 
-    # --- PRINT WEIGHTED POLL AVERAGE ---
+    # Pin 2 — Second-choice transfer matrix
+    print("\n" + "=" * 70)
+    print("SECOND-CHOICE TRANSFER MATRIX  (Pin 2)")
+    print("=" * 70)
+    sc_result = aggregate_second_choice_matrix(polls)
+    if sc_result:
+        transfer_matrix, no_second_rates = sc_result
+        print(f"  Transfer matrix built from "
+              f"{len([p for p in polls if p.get('second_choice_matrix')])} poll(s)")
+        print(f"  Constraint strength: {SECOND_CHOICE_CONSTRAINT_STRENGTH:.0%} "
+              f"of downward deviations routed through transfers")
+    else:
+        transfer_matrix = no_second_rates = None
+        print("  No second-choice data available — constraint disabled")
+
+    # Senate district crosstabs
+    print("\n" + "=" * 70)
+    print("SENATE DISTRICT CROSSTABS")
+    print("=" * 70)
+    senate_crosstabs = aggregate_senate_district_crosstabs(polls)
+    if senate_crosstabs:
+        print(f"  ✓ Senate district crosstabs aggregated for {list(senate_crosstabs.keys())}")
+    else:
+        print("  ⚠ No senate district crosstabs found in any poll")
+
+    # Composite undecided weights
+    print("\n" + "=" * 70)
+    print("COMPOSITE UNDECIDED WEIGHTS")
+    print("=" * 70)
+    composite_weights = calculate_district_wide_undecided_bias(
+        scaled_crosstabs, fav_weights)
+
+    # Baseline printout
     print("\nBASELINE: WEIGHTED POLL AVERAGE")
     print("-" * 70)
-    candidates = ['Fine', 'Biss', 'Abughazaleh', 'Simmons', 'Amiwala', 'Andrew', 'Huynh']
-    for cand in candidates:
+    for cand in CANDIDATES:
         print(f"  {cand:15s}: {baseline.get(cand, 0):5.1f}%")
-    print(f"\nUndecided: {undecided_pct:.1f}%")
-    print(f"Average MOE: ±{avg_moe:.1f}%")
+    print(f"\n  Undecided: {undecided_pct:.1f}%")
+    print(f"  Average MOE: ±{avg_moe:.1f}%")
     print("-" * 70)
 
-    tracking_candidates = candidates + ['Other_Breakout']
-    wins = {cand: 0 for cand in tracking_candidates}
-    all_results = {cand: [] for cand in tracking_candidates}
-    best_scenarios = {cand: 0.0 for cand in candidates}  # Tracking high water mark
+    tracking_candidates = CANDIDATES + ['Other_Breakout']
+    wins         = {cand: 0    for cand in tracking_candidates}
+    all_results  = {cand: []   for cand in tracking_candidates}
+    best_scenarios = {cand: 0.0 for cand in CANDIDATES}
 
     print(f"\nRunning {n_simulations:,} simulations...")
 
     for i in range(n_simulations):
         if (i + 1) % 50000 == 0:
-            print(f"  Completed {i + 1:,}/{n_simulations:,} simulations...")
+            print(f"  Completed {i+1:,}/{n_simulations:,}...")
 
-        # Pass composite_weights to the simulation
-        results = simulate_election(baseline, undecided_pct, avg_moe, trend_signal, composite_weights)
+        results = simulate_election(
+            baseline, undecided_pct, avg_moe, trend_signal,
+            composite_weights, transfer_matrix, no_second_rates
+        )
         winner = max(results.items(), key=lambda x: x[1])[0]
-
         if winner not in wins:
             wins[winner] = 0
             all_results[winner] = [0] * i
-
         wins[winner] += 1
 
-        # Track ceilings (best outcome for each simulated run)
         for cand, score in results.items():
-            if cand in best_scenarios:
-                if score > best_scenarios[cand]:
-                    best_scenarios[cand] = score
+            if cand in best_scenarios and score > best_scenarios[cand]:
+                best_scenarios[cand] = score
 
         for cand in tracking_candidates:
             all_results[cand].append(results.get(cand, 0))
 
-    win_probs = {cand: (wins[cand] / n_simulations) * 100 for cand in candidates}
-    percentiles = {cand: {p: np.percentile(all_results[cand], q) for p, q in
-                          zip(['p10', 'p25', 'p50', 'p75', 'p90'], [10, 25, 50, 75, 90])} for cand in candidates}
+    win_probs = {c: (wins[c] / n_simulations) * 100 for c in CANDIDATES}
+    percentiles = {
+        c: {p: np.percentile(all_results[c], q)
+            for p, q in zip(['p10', 'p25', 'p50', 'p75', 'p90'],
+                            [10, 25, 50, 75, 90])}
+        for c in CANDIDATES
+    }
 
-    return win_probs, percentiles, all_results, wins, best_scenarios, scaled_crosstabs, crosstab_moes
+    return (win_probs, percentiles, all_results, wins, best_scenarios,
+            scaled_crosstabs, crosstab_moes, fav_weights,
+            transfer_matrix, no_second_rates, senate_crosstabs)
 
+
+# ============================================================================
+# VERSIONED POLL BASELINE HISTORY
+# ============================================================================
+
+def build_poll_history(all_polls, n_simulations_history=100_000):
+    """
+    Builds a chronological list of polling snapshots.
+    Each snapshot contains baseline, crosstabs, favorability, second-choice,
+    senate district crosstabs, and win probabilities at that point in time.
+    """
+    print("\n" + "=" * 70)
+    print("BUILDING VERSIONED POLL HISTORY")
+    print("=" * 70)
+
+    cutoff = datetime.strptime(HISTORY_CUTOFF_DATE, '%Y-%m-%d')
+    sorted_polls = sorted(all_polls, key=lambda p: p['date'])
+
+    snapshot_definitions = []
+
+    pre_cutoff = [p for p in sorted_polls
+                  if datetime.strptime(p['date'], '%Y-%m-%d') < cutoff]
+    if pre_cutoff:
+        snapshot_definitions.append({
+            'as_of': HISTORY_CUTOFF_DATE,
+            'label': 'pre_2026_cutoff',
+            'polls': pre_cutoff,
+            'trigger_poll': None
+        })
+
+    seen_dates = set()
+    for poll in sorted_polls:
+        date_str = poll['date']
+        if date_str in seen_dates:
+            continue
+        seen_dates.add(date_str)
+        polls_up_to = [p for p in sorted_polls if p['date'] <= date_str]
+        poll_name = (poll['name'].lower()
+                     .replace(' ', '_').replace('/', '_')
+                     .replace('(', '').replace(')', ''))
+        snapshot_definitions.append({
+            'as_of': date_str,
+            'label': f"after_{poll_name}_{date_str}",
+            'polls': polls_up_to,
+            'trigger_poll': poll['name']
+        })
+
+    history = []
+
+    for snap_def in snapshot_definitions:
+        as_of   = snap_def['as_of']
+        label   = snap_def['label']
+        snap_polls = snap_def['polls']
+        trigger = snap_def['trigger_poll']
+
+        print(f"\n  Building snapshot: {label}")
+        print(f"    Polls included: {len(snap_polls)}")
+
+        if not snap_polls:
+            continue
+
+        try:
+            baseline, undecided_pct = aggregate_polls(snap_polls)
+            avg_moe = calculate_average_moe(snap_polls)
+            trend_signal = compute_trend_signal(snap_polls)
+
+            crosstab_polls = [p for p in snap_polls if p.get('has_crosstabs')]
+            scaled_crosstabs = crosstab_moes = None
+            if crosstab_polls:
+                averaged_crosstabs, crosstab_moes = aggregate_crosstabs(snap_polls)
+                if averaged_crosstabs:
+                    scaled_crosstabs = scale_crosstabs_to_polling_average(
+                        averaged_crosstabs, baseline, crosstab_polls)
+
+            fav_weights = compute_favorability_weights(snap_polls)
+
+            sc_result = aggregate_second_choice_matrix(snap_polls)
+            transfer_matrix_json  = sc_result[0] if sc_result else None
+            no_second_rates_json  = sc_result[1] if sc_result else None
+
+            senate_crosstabs_snap = aggregate_senate_district_crosstabs(snap_polls)
+
+            sc_topline  = _aggregate_second_choice_topline(snap_polls)
+            fav_topline = _aggregate_favorability_topline(snap_polls)
+
+            composite_weights = calculate_district_wide_undecided_bias(
+                scaled_crosstabs, fav_weights)
+
+            wins_snap    = {c: 0  for c in CANDIDATES}
+            all_res_snap = {c: [] for c in CANDIDATES}
+
+            for _ in range(n_simulations_history):
+                res = simulate_election(
+                    baseline, undecided_pct, avg_moe, trend_signal,
+                    composite_weights, transfer_matrix_json, no_second_rates_json
+                )
+                winner = max({c: res[c] for c in CANDIDATES}.items(),
+                             key=lambda x: x[1])[0]
+                wins_snap[winner] += 1
+                for c in CANDIDATES:
+                    all_res_snap[c].append(res.get(c, 0))
+
+            win_probs_snap = {c: (wins_snap[c] / n_simulations_history) * 100
+                              for c in CANDIDATES}
+            median_snap    = {c: float(np.median(all_res_snap[c]))
+                              for c in CANDIDATES}
+
+            snapshot = {
+                'as_of': as_of,
+                'label': label,
+                'trigger_poll': trigger,
+                'n_polls_included': len(snap_polls),
+                'poll_names': [p['name'] for p in snap_polls],
+                'baseline': {k: v for k, v in baseline.items() if k in CANDIDATES},
+                'median_forecast': median_snap,
+                'win_probabilities': win_probs_snap,
+                'undecided_pct': undecided_pct,
+                'avg_moe': avg_moe,
+                'scaled_crosstabs': scaled_crosstabs,
+                'crosstab_moes': crosstab_moes,
+                'senate_district_crosstabs': senate_crosstabs_snap,
+                'favorability_weights': fav_weights,
+                'favorability_topline': fav_topline,
+                'second_choice_topline': sc_topline,
+                'second_choice_transfer_matrix': transfer_matrix_json,
+                'second_choice_no_second_rates': no_second_rates_json,
+            }
+
+            history.append(snapshot)
+            print(f"    ✓ Win probs: "
+                  + ", ".join(f"{c}: {win_probs_snap[c]:.1f}%"
+                               for c in sorted(CANDIDATES,
+                                               key=lambda x: -win_probs_snap[x])[:3])
+                  + "...")
+
+        except Exception as e:
+            print(f"    ✗ Error building snapshot {label}: {e}")
+            import traceback; traceback.print_exc()
+            continue
+
+    return history
+
+
+def _aggregate_second_choice_topline(polls):
+    sc_polls = [p for p in polls if p.get('second_choice')]
+    if not sc_polls:
+        return None
+    accumulated = {c: 0.0 for c in CANDIDATES + ['no_second', 'Others']}
+    total_weight = 0.0
+    for poll in sc_polls:
+        weight, _ = calculate_poll_weight(poll)
+        sc = poll['second_choice']
+        for key in accumulated:
+            accumulated[key] += sc.get(key, 0) * weight
+        total_weight += weight
+    if total_weight == 0:
+        return None
+    return {k: v / total_weight for k, v in accumulated.items()}
+
+
+def _aggregate_favorability_topline(polls):
+    fav_polls = [p for p in polls if p.get('favorability')]
+    if not fav_polls:
+        return None
+    accumulated = {
+        c: {'favorable': 0.0, 'unfavorable': 0.0,
+            'not_heard': 0.0, 'not_sure': 0.0}
+        for c in CANDIDATES
+    }
+    total_weight = 0.0
+    for poll in fav_polls:
+        weight, _ = calculate_poll_weight(poll)
+        fav_data = poll['favorability']
+        for cand in CANDIDATES:
+            if cand not in fav_data:
+                continue
+            overall = fav_data[cand].get('overall', {})
+            for key in ['favorable', 'unfavorable', 'not_heard', 'not_sure']:
+                accumulated[cand][key] += overall.get(key, 0) * weight
+        total_weight += weight
+    if total_weight == 0:
+        return None
+    result = {}
+    for cand in CANDIDATES:
+        avg = {k: v / total_weight for k, v in accumulated[cand].items()}
+        fav   = avg['favorable']
+        unfav = avg['unfavorable']
+        aware_total = fav + unfav
+        avg['net'] = fav - unfav
+        avg['aware_fav_rate'] = (fav / aware_total * 100) if aware_total > 0 else 50.0
+        result[cand] = avg
+    return result
+
+
+# ============================================================================
+# DISPLAY / PRINT HELPERS
+# ============================================================================
 
 def display_win_counts(wins, n_simulations):
-    """Prints the raw number of wins each candidate achieved"""
     print("\n" + "=" * 70)
     print(f"RAW WIN COUNTS (Out of {n_simulations:,} Simulations)")
     print("=" * 70)
-
-    sorted_wins = sorted(wins.items(), key=lambda x: x[1], reverse=True)
-    print(f"{'Candidate':<20s} {'Wins':<15s}")
-    print("-" * 40)
-    for cand, count in sorted_wins:
+    for cand, count in sorted(wins.items(), key=lambda x: x[1], reverse=True):
         if count > 0:
             print(f"{cand:<20s} {count:<15,}")
 
 
 def print_best_scenarios(best_scenarios):
-    """Prints the highest percentage achieved by candidates"""
     print("\n" + "=" * 70)
     print("CEILING ANALYSIS: BEST POSSIBLE OUTCOMES")
     print("=" * 70)
-    sorted_best = sorted(best_scenarios.items(), key=lambda x: x[1], reverse=True)
-    for cand, high in sorted_best:
+    for cand, high in sorted(best_scenarios.items(), key=lambda x: x[1], reverse=True):
         print(f"  {cand:15s}: {high:5.1f}%")
 
 
@@ -797,24 +1060,25 @@ def display_results(win_probs, percentiles):
     print("\n" + "=" * 70)
     print("WIN PROBABILITIES")
     print("=" * 70)
-    sorted_probs = sorted(win_probs.items(), key=lambda x: x[1], reverse=True)
     print(f"\n{'Candidate':<15s} {'Win Prob':<12s} {'Likely Range (50%)':<25s}")
     print("-" * 70)
-    for cand, prob in sorted_probs:
-        p25, p75, p50 = percentiles[cand]['p25'], percentiles[cand]['p75'], percentiles[cand]['p50']
+    for cand, prob in sorted(win_probs.items(), key=lambda x: x[1], reverse=True):
+        p25 = percentiles[cand]['p25']
+        p75 = percentiles[cand]['p75']
+        p50 = percentiles[cand]['p50']
         bar = "█" * int(prob / 2)
-        print(f"{cand:<15s} {prob:>5.1f}%  {bar:<25s} {p25:.1f}%-{p75:.1f}% (median: {p50:.1f}%)")
+        print(f"{cand:<15s} {prob:>5.1f}%  {bar:<25s} "
+              f"{p25:.1f}%-{p75:.1f}% (median: {p50:.1f}%)")
 
 
 def create_visualization(win_probs, percentiles, all_results):
-    candidates = ['Fine', 'Biss', 'Abughazaleh', 'Simmons', 'Amiwala', 'Andrew', 'Huynh']
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
     sorted_probs = sorted(win_probs.items(), key=lambda x: x[1], reverse=True)
     cands, probs = zip(*sorted_probs)
     ax1.barh(cands, probs, color='skyblue')
     ax1.set_title('Win Probability (%)')
-    ax2.boxplot([all_results[c] for c in cands if c in all_results], labels=[c for c in cands if c in all_results],
-                vert=False)
+    ax2.boxplot([all_results[c] for c in cands if c in all_results],
+                labels=[c for c in cands if c in all_results], vert=False)
     ax2.set_title('Distribution of Outcomes')
     plt.tight_layout()
     plt.savefig('win_probabilities.png')
@@ -822,45 +1086,39 @@ def create_visualization(win_probs, percentiles, all_results):
 
 
 def print_crosstab_summary(scaled_crosstabs):
-    """Print formatted summary of scaled crosstabs"""
     if not scaled_crosstabs:
         print("\nNo crosstabs available to display.")
         return
-
     print("\n" + "=" * 70)
     print("SCALED CROSSTABS - DEMOGRAPHIC SUPPORT PROFILES")
     print("=" * 70)
 
-    # Get all demographics
     all_demographics = set()
-    for cand_crosstabs in scaled_crosstabs.values():
-        all_demographics.update(cand_crosstabs.keys())
+    for ct in scaled_crosstabs.values():
+        all_demographics.update(ct.keys())
 
-    # Group demographics by type
-    ideology_demos = sorted([d for d in all_demographics if 'liberal' in d or 'moderate' in d])
-    age_demos = sorted([d for d in all_demographics if 'age' in d])
-    gender_demos = sorted([d for d in all_demographics if d in ['male', 'female']])
-    education_demos = sorted([d for d in all_demographics if 'college' in d])
-    race_demos = sorted([d for d in all_demographics if d in ['white', 'black', 'asian', 'hispanic']])
+    ideology_demos = sorted([d for d in all_demographics
+                              if 'liberal' in d or 'moderate' in d])
+    age_demos  = sorted([d for d in all_demographics if 'age' in d])
+    race_demos = [d for d in all_demographics
+                  if d in ['white', 'black', 'asian', 'hispanic']]
 
-    # Print ideology crosstabs
     if ideology_demos:
         print("\nIDEOLOGY:")
-        print(f"{'Candidate':<15s} {'Moderate':<12s} {'Smwt Liberal':<15s} {'Very Liberal':<15s}")
+        print(f"{'Candidate':<15s} {'Moderate':<12s} "
+              f"{'Smwt Liberal':<15s} {'Very Liberal':<15s}")
         print("-" * 60)
         for cand in CANDIDATES:
             if cand in scaled_crosstabs:
-                mod = scaled_crosstabs[cand].get('moderate', 0)
+                mod  = scaled_crosstabs[cand].get('moderate', 0)
                 smwt = scaled_crosstabs[cand].get('somewhat_liberal', 0)
                 very = scaled_crosstabs[cand].get('very_liberal', 0)
-                print(f"{cand:<15s} {mod:>7.1f}%      {smwt:>7.1f}%         {very:>7.1f}%")
+                print(f"{cand:<15s} {mod:>7.1f}%      "
+                      f"{smwt:>7.1f}%         {very:>7.1f}%")
 
-    # Print age crosstabs
     if age_demos:
         print("\nAGE:")
-        header = f"{'Candidate':<15s}"
-        for demo in age_demos:
-            header += f" {demo:<12s}"
+        header = f"{'Candidate':<15s}" + "".join(f" {d:<12s}" for d in age_demos)
         print(header)
         print("-" * (15 + 13 * len(age_demos)))
         for cand in CANDIDATES:
@@ -871,34 +1129,9 @@ def print_crosstab_summary(scaled_crosstabs):
                     row += f" {val:>7.1f}%    "
                 print(row)
 
-    # Print gender crosstabs
-    if gender_demos:
-        print("\nGENDER:")
-        print(f"{'Candidate':<15s} {'Female':<12s} {'Male':<12s}")
-        print("-" * 45)
-        for cand in CANDIDATES:
-            if cand in scaled_crosstabs:
-                female = scaled_crosstabs[cand].get('female', 0)
-                male = scaled_crosstabs[cand].get('male', 0)
-                print(f"{cand:<15s} {female:>7.1f}%      {male:>7.1f}%")
-
-    # Print education crosstabs
-    if education_demos:
-        print("\nEDUCATION:")
-        print(f"{'Candidate':<15s} {'No College':<12s} {'College':<12s}")
-        print("-" * 45)
-        for cand in CANDIDATES:
-            if cand in scaled_crosstabs:
-                no_college = scaled_crosstabs[cand].get('no_college', 0)
-                college = scaled_crosstabs[cand].get('college', 0)
-                print(f"{cand:<15s} {no_college:>7.1f}%      {college:>7.1f}%")
-
-    # Print race/ethnicity crosstabs
     if race_demos:
         print("\nRACE/ETHNICITY:")
-        header = f"{'Candidate':<15s}"
-        for demo in race_demos:
-            header += f" {demo.capitalize():<12s}"
+        header = f"{'Candidate':<15s}" + "".join(f" {d.capitalize():<12s}" for d in race_demos)
         print(header)
         print("-" * (15 + 13 * len(race_demos)))
         for cand in CANDIDATES:
@@ -910,122 +1143,162 @@ def print_crosstab_summary(scaled_crosstabs):
                 print(row)
 
     print("\n" + "=" * 70)
+
+
+# ============================================================================
+# MAIN
+# ============================================================================
+
 if __name__ == "__main__":
     if len(POLLS) == 0:
         print("\nERROR: No polls configured!")
         exit(1)
 
-    # Modified call to include crosstabs
-    win_probs, percentiles, all_results, wins, best_scenarios, scaled_crosstabs, crosstab_moes = run_monte_carlo(POLLS, N_SIMULATIONS)
+    # -----------------------------------------------------------------------
+    # PRIMARY SIMULATION (full N_SIMULATIONS, all polls)
+    # -----------------------------------------------------------------------
+    (win_probs, percentiles, all_results, wins, best_scenarios,
+     scaled_crosstabs, crosstab_moes, fav_weights,
+     transfer_matrix, no_second_rates,
+     senate_crosstabs) = run_monte_carlo(POLLS, N_SIMULATIONS)
 
-    # Print outputs
     display_win_counts(wins, N_SIMULATIONS)
     display_results(win_probs, percentiles)
     print_best_scenarios(best_scenarios)
     print_crosstab_summary(scaled_crosstabs)
-
     create_visualization(win_probs, percentiles, all_results)
 
-    # Export forecast for precinct-level model
+    # -----------------------------------------------------------------------
+    # EXPORT — build full versioned history
+    # -----------------------------------------------------------------------
     baseline, undecided_pct = aggregate_polls(POLLS)
     avg_moe = calculate_average_moe(POLLS)
+    median_forecast = {c: float(np.percentile(all_results[c], 50))
+                       for c in CANDIDATES}
 
-    CANDIDATES = ['Fine', 'Biss', 'Abughazaleh', 'Simmons', 'Amiwala', 'Andrew', 'Huynh']
-    median_forecast = {cand: np.percentile(all_results[cand], 50) for cand in CANDIDATES}
+    fav_topline = _aggregate_favorability_topline(POLLS)
+    sc_topline  = _aggregate_second_choice_topline(POLLS)
+    sc_result   = aggregate_second_choice_matrix(POLLS)
+    transfer_matrix_export = sc_result[0] if sc_result else None
+    no_second_export       = sc_result[1] if sc_result else None
 
-    # Export both forecasts and win probabilities
-    with open('poll_baseline.json', 'w') as f:
-        json.dump({
-            'baseline': baseline,
+    print("\n" + "=" * 70)
+    print("BUILDING POLL HISTORY SNAPSHOTS")
+    print("(100k sims per snapshot — this may take a few minutes)")
+    print("=" * 70)
+    history = build_poll_history(POLLS, n_simulations_history=100_000)
+
+    # -----------------------------------------------------------------------
+    # Load previous results for change tracking
+    # -----------------------------------------------------------------------
+    old_data = {}
+    if os.path.exists('district_win_probabilities.json'):
+        with open('district_win_probabilities.json', 'r') as f:
+            old_data = json.load(f)
+
+    changes = {
+        c: {
+            'win_prob_change': (win_probs[c]
+                                - old_data.get('win_probabilities', {})
+                                .get(c, win_probs[c])),
+            'vote_share_change': (median_forecast[c]
+                                  - old_data.get('median_results', {})
+                                  .get(c, median_forecast[c]))
+        }
+        for c in CANDIDATES
+    }
+
+    last_run = datetime.now().strftime('%Y-%m-%d %I:%M %p')
+
+    # -----------------------------------------------------------------------
+    # Write poll_baseline.json  (versioned)
+    # -----------------------------------------------------------------------
+    poll_baseline_out = {
+        # Current snapshot — what all downstream scripts consume
+        'current': {
+            'as_of': max(p['date'] for p in POLLS),
+            'baseline': {k: v for k, v in baseline.items() if k in CANDIDATES},
             'median_forecast': median_forecast,
             'undecided_pct': undecided_pct,
             'avg_moe': avg_moe,
-            'scaled_crosstabs': scaled_crosstabs,  # NEW: Export scaled crosstabs
-            'crosstab_moes': crosstab_moes  # NEW: Export crosstab margins of error
-        }, f, indent=2)
+            'scaled_crosstabs': scaled_crosstabs,
+            'crosstab_moes': crosstab_moes,
+            # Pin 1
+            'favorability_weights': fav_weights,
+            'favorability_topline': fav_topline,
+            # Pin 2
+            'second_choice_topline': sc_topline,
+            'second_choice_transfer_matrix': transfer_matrix_export,
+            'second_choice_no_second_rates': no_second_export,
+            # Senate district crosstabs — consumed by win_probability_precinct.py
+            # via ['current']['senate_district_crosstabs']
+            'senate_district_crosstabs': senate_crosstabs,
+        },
 
-        # Add this section at the end of your simulation script, replacing the export section
+        # Full chronological history
+        'history': history,
 
-        # Export forecast for precinct-level model
-        baseline, undecided_pct = aggregate_polls(POLLS)
-        avg_moe = calculate_average_moe(POLLS)
+        # Banked votes placeholder — populated by precinct map script
+        'banked_votes': {c: 0 for c in CANDIDATES},
 
-        CANDIDATES = ['Fine', 'Biss', 'Abughazaleh', 'Simmons', 'Amiwala', 'Andrew', 'Huynh']
-        median_forecast = {cand: np.percentile(all_results[cand], 50) for cand in CANDIDATES}
+        'last_run': last_run,
+        'n_simulations': N_SIMULATIONS,
+    }
 
-        # Export baseline
-        with open('poll_baseline.json', 'w') as f:
-            json.dump({
-                'baseline': baseline,
-                'median_forecast': median_forecast,
-                'undecided_pct': undecided_pct,
-                'avg_moe': avg_moe,
-                'scaled_crosstabs': scaled_crosstabs,
-                'crosstab_moes': crosstab_moes
-            }, f, indent=2)
+    with open('poll_baseline.json', 'w') as f:
+        json.dump(poll_baseline_out, f, indent=2)
 
-        # --- ARCHIVE OLD RESULTS AND TRACK CHANGES ---
-        import os
-        from datetime import datetime
+    print(f"\n✓ poll_baseline.json written with {len(history)} history snapshots")
+    if senate_crosstabs:
+        print(f"✓ senate_district_crosstabs included: {list(senate_crosstabs.keys())}")
+    else:
+        print("⚠ senate_district_crosstabs: None (no poll had senate district data)")
 
-        # Load previous results if they exist
-        old_data = {}
-        if os.path.exists('district_win_probabilities.json'):
-            with open('district_win_probabilities.json', 'r') as f:
-                old_data = json.load(f)
+    # -----------------------------------------------------------------------
+    # Write district_win_probabilities.json
+    # -----------------------------------------------------------------------
+    new_dist_data = {
+        'win_probabilities': win_probs,
+        'median_results': median_forecast,
+        'simulation_wins': wins,
+        'last_run': last_run,
+        'changes': changes,
+    }
+    if old_data.get('win_probabilities'):
+        new_dist_data['win_probabilities_old'] = old_data['win_probabilities']
+    if old_data.get('median_results'):
+        new_dist_data['median_results_old'] = old_data['median_results']
 
-        # Calculate changes
-        changes = {}
+    with open('district_win_probabilities.json', 'w') as f:
+        json.dump(new_dist_data, f, indent=2)
+
+    # -----------------------------------------------------------------------
+    # Print changes since last run
+    # -----------------------------------------------------------------------
+    print("\n" + "=" * 70)
+    print("CHANGES SINCE LAST RUN")
+    print("=" * 70)
+    if old_data.get('win_probabilities'):
+        print(f"\n{'Candidate':<15s} {'Win Prob Change':<20s} "
+              f"{'Vote Share Change':<20s}")
+        print("-" * 60)
         for cand in CANDIDATES:
-            changes[cand] = {
-                'win_prob_change': win_probs[cand] - old_data.get('win_probabilities', {}).get(cand, win_probs[cand]),
-                'vote_share_change': median_forecast[cand] - old_data.get('median_results', {}).get(cand,
-                                                                                                    median_forecast[
-                                                                                                        cand])
-            }
+            wp_change = changes[cand]['win_prob_change']
+            vs_change = changes[cand]['vote_share_change']
+            wp_arrow  = "↑" if wp_change > 0 else "↓" if wp_change < 0 else "→"
+            vs_arrow  = "↑" if vs_change > 0 else "↓" if vs_change < 0 else "→"
+            print(f"{cand:<15s} {wp_arrow} {wp_change:+6.1f}%           "
+                  f"{vs_arrow} {vs_change:+6.1f}%")
+    else:
+        print("No previous run to compare against.")
 
-        # Get current timestamp
-        last_run = datetime.now().strftime('%Y-%m-%d %I:%M %p')
-
-        # Build new data structure with archived old values
-        new_data = {
-            'win_probabilities': win_probs,
-            'median_results': median_forecast,
-            'simulation_wins': wins,
-            'last_run': last_run,
-            'changes': changes
-        }
-
-        # Archive old values if they existed
-        if old_data.get('win_probabilities'):
-            new_data['win_probabilities_old'] = old_data['win_probabilities']
-        if old_data.get('median_results'):
-            new_data['median_results_old'] = old_data['median_results']
-
-        # Save updated data
-        with open('district_win_probabilities.json', 'w') as f:
-            json.dump(new_data, f, indent=2)
-
-        print("\n✓ Forecast exported to poll_baseline.json (including scaled crosstabs)")
-        print("✓ District win probabilities exported to district_win_probabilities.json")
-        print(f"✓ Last run timestamp: {last_run}")
-
-        # Print changes
-        print("\n" + "=" * 70)
-        print("CHANGES SINCE LAST RUN")
-        print("=" * 70)
-        if old_data.get('win_probabilities'):
-            print(f"\n{'Candidate':<15s} {'Win Prob Change':<20s} {'Vote Share Change':<20s}")
-            print("-" * 60)
-            for cand in CANDIDATES:
-                wp_change = changes[cand]['win_prob_change']
-                vs_change = changes[cand]['vote_share_change']
-                wp_arrow = "↑" if wp_change > 0 else "↓" if wp_change < 0 else "→"
-                vs_arrow = "↑" if vs_change > 0 else "↓" if vs_change < 0 else "→"
-                print(f"{cand:<15s} {wp_arrow} {wp_change:+6.1f}%           {vs_arrow} {vs_change:+6.1f}%")
-        else:
-            print("No previous run to compare against.")
-
-        print("\n" + "=" * 70)
-        print("SIMULATION COMPLETE!")
-        print("=" * 70)
+    print("\n" + "=" * 70)
+    print("SIMULATION COMPLETE!")
+    print("=" * 70)
+    print(f"\nOutputs:")
+    print(f"  poll_baseline.json              — versioned history + current snapshot")
+    print(f"  district_win_probabilities.json — win probs for map")
+    print(f"  win_probabilities.png           — visualization")
+    print(f"\nHistory snapshots: {len(history)}")
+    for snap in history:
+        print(f"  {snap['as_of']}  {snap['label'][:55]}")
