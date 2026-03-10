@@ -276,6 +276,8 @@ def aggregate_crosstabs(polls):
             if cand not in poll.get('crosstabs', {}):
                 continue
             for demo, pct in poll['crosstabs'][cand].items():
+                if pct is None:
+                    continue
                 sample_size = poll.get('crosstab_sample_sizes', {}).get(
                     demo, poll['sample_size'] * 0.2)
                 subsample_weight = np.sqrt(sample_size) / 10

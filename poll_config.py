@@ -8,14 +8,468 @@ house_effect = 2
 
 # Central Poll List
 POLLS = [
+    {# =========================================================================
+        # IDENTIFICATION
+        # =========================================================================
+        'name': 'PPP/RoundTable March 9-10 2026',
+        'date': '2026-03-10',
+        'pollster_id': 'PPP',
+        'sample_size': 741,
+        'wave_id': 2,
+        'pollster_quality': 4.5,
+        'is_internal': False,
+        'has_crosstabs': True,
+
+        # =========================================================================
+        # Q3 — TOPLINE VOTE SHARES
+        # =========================================================================
+        'results': {
+            'Amiwala': 6,
+            'Andrew': 7,
+            'Huynh': 1,
+            'Biss': 24,
+            'Fine': 14,
+            'Abughazaleh': 20,
+            'Simmons': 10,
+            'Others': 4,   # Cohen 1, Justin Ford 1, Sam Polan 0, Nick Pyati 0 → rounded ~2; report kept at 4 to match wave 1 "Others" bucket
+        },
+        'undecided': 17,   # "Not sure"
+
+        # =========================================================================
+        # Q4 — SECOND CHOICE TOPLINE
+        # =========================================================================
+        'second_choice': {
+            'Amiwala': 10,
+            'Andrew': 5,
+            'Huynh': 2,
+            'Biss': 15,
+            'Fine': 8,
+            'Abughazaleh': 10,
+            'Simmons': 10,
+            'Others': 4,   # Cohen 1, Ford 1, Polan 0, Pyati 0, Brown 0, Fredrickson 0
+            'no_second': 38,
+        },
+
+        # =========================================================================
+        # Q4 × Q3 — SECOND CHOICE MATRIX (by first choice)
+        # Source: page 61 crosstab "Democratic Congressional Vote Second Choice"
+        # Read as: row = first choice, columns = second choice
+        # =========================================================================
+        'second_choice_matrix': {
+
+            'Biss': {
+                'Amiwala': 10,
+                'Andrew': 8,
+                'Huynh': 2,
+                'Fine': 23,
+                'Abughazaleh': 21,
+                'Simmons': 13,
+                'others': 0,
+                'no_second': 23,
+            },
+
+            'Abughazaleh': {
+                'Amiwala': 22,
+                'Andrew': 4,
+                'Huynh': 5,
+                'Biss': 24,
+                'Fine': 6,
+                'Simmons': 20,
+                'others': 0,
+                'no_second': 21,
+            },
+
+            'Fine': {
+                'Amiwala': 5,
+                'Andrew': 11,
+                'Huynh': 2,
+                'Biss': 39,
+                'Abughazaleh': 14,
+                'Simmons': 6,
+                'others': 0,
+                'no_second': 29,
+            },
+
+            'Simmons': {
+                'Amiwala': 21,
+                'Andrew': 10,
+                'Huynh': 7,
+                'Biss': 24,
+                'Fine': 7,
+                'Abughazaleh': 5,
+                'others': 0,
+                'no_second': 25,
+            },
+
+            'Amiwala': {
+                'Andrew': 15,
+                'Huynh': 3,
+                'Biss': 17,
+                'Fine': 2,
+                'Abughazaleh': 37,
+                'Simmons': 17,
+                'others': 0,
+                'no_second': 30,
+            },
+
+            'Andrew': {
+                'Amiwala': 15,
+                'Huynh': 3,
+                'Biss': 17,
+                'Fine': 16,
+                'Abughazaleh': 10,
+                'Simmons': 10,
+                'others': 1,   # Phil Andrew voters' 2nd choice includes "Phil Andrew 30" which is self — likely a data artifact; using residual
+                'no_second': 27,
+            },
+
+            'Huynh': {
+                'Amiwala': 0,
+                'Andrew': 0,
+                'Biss': 29,
+                'Fine': 26,
+                'Abughazaleh': 14,
+                'Simmons': 23,
+                'others': 0,
+                'no_second': 27,
+            },
+        },
+
+        # =========================================================================
+        # Q6–Q15 — FAVORABILITY RATINGS (topline only; full crosstabs below)
+        # =========================================================================
+        'favorability': {
+
+            'Amiwala': {
+                'overall': {'favorable': 35, 'unfavorable': 9, 'not_heard': 39, 'not_sure': 17},
+                'by_gender': {
+                    'woman': {'favorable': 36, 'unfavorable': 8, 'not_heard': 37, 'not_sure': 19},
+                    'man':   {'favorable': 34, 'unfavorable': 8, 'not_heard': 41, 'not_sure': 16},
+                },
+                'by_age': {
+                    'age_18_45': {'favorable': 55, 'unfavorable': 10, 'not_heard': 27, 'not_sure': 9},
+                    'age_46_65': {'favorable': 37, 'unfavorable': 8,  'not_heard': 40, 'not_sure': 16},
+                    'age_65plus': {'favorable': 18, 'unfavorable': 10, 'not_heard': 48, 'not_sure': 24},
+                },
+                'by_race': {
+                    'hispanic': {'favorable': 35, 'unfavorable': 14, 'not_heard': 44, 'not_sure': 8},
+                    'white':    {'favorable': 35, 'unfavorable': 8,  'not_heard': 40, 'not_sure': 17},
+                    'asian':    {'favorable': 62, 'unfavorable': 13, 'not_heard': 20, 'not_sure': 4},
+                    'black':    {'favorable': 25, 'unfavorable': 10, 'not_heard': 33, 'not_sure': 33},
+                    'other':    {'favorable': 30, 'unfavorable': 15, 'not_heard': 47, 'not_sure': 8},
+                },
+                'by_party': {
+                    'democrat':    {'favorable': 38, 'unfavorable': 6,  'not_heard': 39, 'not_sure': 17},
+                    'independent': {'favorable': 31, 'unfavorable': 15, 'not_heard': 39, 'not_sure': 14},
+                },
+                'by_senate_district': {
+                    'sd7': {'favorable': 45, 'unfavorable': 4,  'not_heard': 38, 'not_sure': 13},
+                    'sd8': {'favorable': 42, 'unfavorable': 12, 'not_heard': 32, 'not_sure': 14},
+                    'sd9': {'favorable': 33, 'unfavorable': 13, 'not_heard': 36, 'not_sure': 19},
+                },
+            },
+
+            'Biss': {
+                'overall': {'favorable': 50, 'unfavorable': 31, 'not_heard': 7, 'not_sure': 13},
+                'by_gender': {
+                    'woman': {'favorable': 54, 'unfavorable': 27, 'not_heard': 7,  'not_sure': 12},
+                    'man':   {'favorable': 46, 'unfavorable': 33, 'not_heard': 6,  'not_sure': 14},
+                },
+                'by_age': {
+                    'age_18_45':  {'favorable': 47, 'unfavorable': 36, 'not_heard': 5,  'not_sure': 12},
+                    'age_46_65':  {'favorable': 46, 'unfavorable': 35, 'not_heard': 9,  'not_sure': 10},
+                    'age_65plus': {'favorable': 56, 'unfavorable': 21, 'not_heard': 7,  'not_sure': 16},
+                },
+                'by_race': {
+                    'hispanic': {'favorable': 49, 'unfavorable': 44, 'not_heard': 5,  'not_sure': 2},
+                    'white':    {'favorable': 53, 'unfavorable': 27, 'not_heard': 6,  'not_sure': 14},
+                    'asian':    {'favorable': 36, 'unfavorable': 50, 'not_heard': 14, 'not_sure': 0},
+                    'black':    {'favorable': 44, 'unfavorable': 23, 'not_heard': 10, 'not_sure': 23},
+                    'other':    {'favorable': 29, 'unfavorable': 45, 'not_heard': 11, 'not_sure': 15},
+                },
+                'by_party': {
+                    'democrat':    {'favorable': 55, 'unfavorable': 26, 'not_heard': 5,  'not_sure': 13},
+                    'independent': {'favorable': 33, 'unfavorable': 41, 'not_heard': 15, 'not_sure': 11},
+                },
+                'by_senate_district': {
+                    'sd7': {'favorable': 51, 'unfavorable': 32, 'not_heard': 7,  'not_sure': 10},
+                    'sd8': {'favorable': 47, 'unfavorable': 31, 'not_heard': 9,  'not_sure': 13},
+                    'sd9': {'favorable': 49, 'unfavorable': 36, 'not_heard': 7,  'not_sure': 8},
+                },
+            },
+
+            'Fine': {
+                # Wave 2 major shift: unfavorable surges to 50% (was 35% in wave 1)
+                'overall': {'favorable': 28, 'unfavorable': 50, 'not_heard': 6, 'not_sure': 16},
+                'by_gender': {
+                    'woman': {'favorable': 31, 'unfavorable': 47, 'not_heard': 4,  'not_sure': 19},
+                    'man':   {'favorable': 26, 'unfavorable': 53, 'not_heard': 7,  'not_sure': 14},
+                },
+                'by_age': {
+                    'age_18_45':  {'favorable': 18, 'unfavorable': 66, 'not_heard': 5,  'not_sure': 11},
+                    'age_46_65':  {'favorable': 27, 'unfavorable': 50, 'not_heard': 7,  'not_sure': 16},
+                    'age_65plus': {'favorable': 38, 'unfavorable': 36, 'not_heard': 4,  'not_sure': 22},
+                },
+                'by_race': {
+                    'hispanic': {'favorable': 17, 'unfavorable': 61, 'not_heard': 8,  'not_sure': 14},
+                    'white':    {'favorable': 30, 'unfavorable': 48, 'not_heard': 5,  'not_sure': 17},
+                    'asian':    {'favorable': 15, 'unfavorable': 61, 'not_heard': 14, 'not_sure': 10},
+                    'black':    {'favorable': 31, 'unfavorable': 47, 'not_heard': 3,  'not_sure': 19},
+                    'other':    {'favorable': 26, 'unfavorable': 49, 'not_heard': 9,  'not_sure': 16},
+                },
+                'by_party': {
+                    'democrat':    {'favorable': 29, 'unfavorable': 49, 'not_heard': 5,  'not_sure': 18},
+                    'independent': {'favorable': 26, 'unfavorable': 52, 'not_heard': 9,  'not_sure': 13},
+                },
+                'by_senate_district': {
+                    'sd7': {'favorable': 20, 'unfavorable': 61, 'not_heard': 6,  'not_sure': 13},
+                    'sd8': {'favorable': 29, 'unfavorable': 47, 'not_heard': 6,  'not_sure': 18},
+                    'sd9': {'favorable': 37, 'unfavorable': 44, 'not_heard': 4,  'not_sure': 15},
+                },
+                # Fine: unfavorable nearly doubled wave-over-wave (35%→50%).
+                # Young voters (18-45) now 66% unfavorable. Broadly negative across all subgroups.
+            },
+
+            'Abughazaleh': {
+                'overall': {'favorable': 39, 'unfavorable': 34, 'not_heard': 10, 'not_sure': 17},
+                'by_gender': {
+                    'woman': {'favorable': 34, 'unfavorable': 36, 'not_heard': 12, 'not_sure': 18},
+                    'man':   {'favorable': 47, 'unfavorable': 31, 'not_heard': 8,  'not_sure': 14},
+                },
+                'by_age': {
+                    'age_18_45':  {'favorable': 47, 'unfavorable': 39, 'not_heard': 5,  'not_sure': 10},
+                    'age_46_65':  {'favorable': 40, 'unfavorable': 37, 'not_heard': 11, 'not_sure': 12},
+                    'age_65plus': {'favorable': 33, 'unfavorable': 26, 'not_heard': 14, 'not_sure': 27},
+                },
+                'by_race': {
+                    'hispanic': {'favorable': 44, 'unfavorable': 40, 'not_heard': 10, 'not_sure': 6},
+                    'white':    {'favorable': 41, 'unfavorable': 34, 'not_heard': 10, 'not_sure': 15},
+                    'asian':    {'favorable': 32, 'unfavorable': 34, 'not_heard': 9,  'not_sure': 25},
+                    'black':    {'favorable': 27, 'unfavorable': 24, 'not_heard': 14, 'not_sure': 35},
+                    'other':    {'favorable': 45, 'unfavorable': 38, 'not_heard': 5,  'not_sure': 11},
+                },
+                'by_party': {
+                    'democrat':    {'favorable': 41, 'unfavorable': 32, 'not_heard': 9,  'not_sure': 18},
+                    'independent': {'favorable': 37, 'unfavorable': 39, 'not_heard': 14, 'not_sure': 10},
+                },
+                'by_senate_district': {
+                    'sd7': {'favorable': 43, 'unfavorable': 33, 'not_heard': 10, 'not_sure': 15},
+                    'sd8': {'favorable': 44, 'unfavorable': 37, 'not_heard': 5,  'not_sure': 14},
+                    'sd9': {'favorable': 33, 'unfavorable': 37, 'not_heard': 9,  'not_sure': 21},
+                },
+            },
+
+            'Simmons': {
+                'overall': {'favorable': 35, 'unfavorable': 6, 'not_heard': 40, 'not_sure': 18},
+                'by_gender': {
+                    'woman': {'favorable': 36, 'unfavorable': 6, 'not_heard': 38, 'not_sure': 20},
+                    'man':   {'favorable': 35, 'unfavorable': 6, 'not_heard': 45, 'not_sure': 15},
+                },
+                'by_age': {
+                    'age_18_45':  {'favorable': 49, 'unfavorable': 8,  'not_heard': 29, 'not_sure': 14},
+                    'age_46_65':  {'favorable': 33, 'unfavorable': 8,  'not_heard': 43, 'not_sure': 16},
+                    'age_65plus': {'favorable': 26, 'unfavorable': 4,  'not_heard': 48, 'not_sure': 23},
+                },
+                'by_race': {
+                    'hispanic': {'favorable': 38, 'unfavorable': 18, 'not_heard': 34, 'not_sure': 10},
+                    'white':    {'favorable': 37, 'unfavorable': 5,  'not_heard': 41, 'not_sure': 16},
+                    'asian':    {'favorable': 33, 'unfavorable': 9,  'not_heard': 26, 'not_sure': 33},
+                    'black':    {'favorable': 25, 'unfavorable': 3,  'not_heard': 47, 'not_sure': 25},
+                    'other':    {'favorable': 27, 'unfavorable': 7,  'not_heard': 43, 'not_sure': 23},
+                },
+                'by_party': {
+                    'democrat':    {'favorable': 38, 'unfavorable': 4,  'not_heard': 40, 'not_sure': 18},
+                    'independent': {'favorable': 26, 'unfavorable': 13, 'not_heard': 47, 'not_sure': 14},
+                },
+                'by_senate_district': {
+                    'sd7': {'favorable': 61, 'unfavorable': 9,  'not_heard': 19, 'not_sure': 10},
+                    'sd8': {'favorable': 35, 'unfavorable': 1,  'not_heard': 43, 'not_sure': 20},
+                    'sd9': {'favorable': 31, 'unfavorable': 4,  'not_heard': 46, 'not_sure': 19},
+                },
+                # Simmons: very clean fav/unfav (35/6 = +29 net). SD7 outlier at 61% favorable.
+                # Jumped from 6% to 10% vote share wave-over-wave.
+            },
+
+            'Andrew': {
+                'overall': {'favorable': 24, 'unfavorable': 15, 'not_heard': 39, 'not_sure': 22},
+                'by_gender': {
+                    'woman': {'favorable': 23, 'unfavorable': 15, 'not_heard': 37, 'not_sure': 24},
+                    'man':   {'favorable': 26, 'unfavorable': 12, 'not_heard': 42, 'not_sure': 19},
+                },
+                'by_age': {
+                    'age_18_45':  {'favorable': 16, 'unfavorable': 25, 'not_heard': 41, 'not_sure': 19},
+                    'age_46_65':  {'favorable': 31, 'unfavorable': 12, 'not_heard': 37, 'not_sure': 21},
+                    'age_65plus': {'favorable': 26, 'unfavorable': 8,  'not_heard': 41, 'not_sure': 25},
+                },
+                'by_race': {
+                    'hispanic': {'favorable': 11, 'unfavorable': 17, 'not_heard': 49, 'not_sure': 23},
+                    'white':    {'favorable': 27, 'unfavorable': 12, 'not_heard': 37, 'not_sure': 24},
+                    'asian':    {'favorable': 25, 'unfavorable': 25, 'not_heard': 31, 'not_sure': 19},
+                    'black':    {'favorable': 9,  'unfavorable': 29, 'not_heard': 56, 'not_sure': 6},
+                    'other':    {'favorable': 35, 'unfavorable': 7,  'not_heard': 34, 'not_sure': 24},
+                },
+                'by_party': {
+                    'democrat':    {'favorable': 25, 'unfavorable': 14, 'not_heard': 38, 'not_sure': 23},
+                    'independent': {'favorable': 20, 'unfavorable': 13, 'not_heard': 49, 'not_sure': 18},
+                },
+                'by_senate_district': {
+                    'sd7': {'favorable': 15, 'unfavorable': 16, 'not_heard': 49, 'not_sure': 20},
+                    'sd8': {'favorable': 29, 'unfavorable': 16, 'not_heard': 29, 'not_sure': 25},
+                    'sd9': {'favorable': 34, 'unfavorable': 16, 'not_heard': 29, 'not_sure': 22},
+                },
+            },
+
+            'Huynh': {
+                'overall': {'favorable': 21, 'unfavorable': 10, 'not_heard': 45, 'not_sure': 24},
+                'by_gender': {
+                    'woman': {'favorable': 20, 'unfavorable': 8,  'not_heard': 44, 'not_sure': 28},
+                    'man':   {'favorable': 24, 'unfavorable': 10, 'not_heard': 46, 'not_sure': 21},
+                },
+                'by_age': {
+                    'age_18_45':  {'favorable': 32, 'unfavorable': 14, 'not_heard': 35, 'not_sure': 19},
+                    'age_46_65':  {'favorable': 18, 'unfavorable': 9,  'not_heard': 53, 'not_sure': 19},
+                    'age_65plus': {'favorable': 15, 'unfavorable': 6,  'not_heard': 47, 'not_sure': 32},
+                },
+                'by_race': {
+                    'hispanic': {'favorable': 23, 'unfavorable': 6,  'not_heard': 51, 'not_sure': 20},
+                    'white':    {'favorable': 22, 'unfavorable': 7,  'not_heard': 42, 'not_sure': 29},
+                    'asian':    {'favorable': 29, 'unfavorable': 24, 'not_heard': 41, 'not_sure': 6},
+                    'black':    {'favorable': 9,  'unfavorable': 19, 'not_heard': 66, 'not_sure': 5},
+                    'other':    {'favorable': 21, 'unfavorable': 12, 'not_heard': 50, 'not_sure': 18},
+                },
+                'by_party': {
+                    'democrat':    {'favorable': 23, 'unfavorable': 8,  'not_heard': 43, 'not_sure': 26},
+                    'independent': {'favorable': 14, 'unfavorable': 10, 'not_heard': 58, 'not_sure': 18},
+                },
+                'by_senate_district': {
+                    'sd7': {'favorable': 35, 'unfavorable': 9,  'not_heard': 34, 'not_sure': 22},
+                    'sd8': {'favorable': 24, 'unfavorable': 12, 'not_heard': 45, 'not_sure': 19},
+                    'sd9': {'favorable': 10, 'unfavorable': 11, 'not_heard': 49, 'not_sure': 29},
+                },
+            },
+        },
+
+        # =========================================================================
+        # VOTE SHARE CROSSTABS  (Q3 by demographic subgroup)
+        # =========================================================================
+        'crosstab_sample_sizes': {
+            'female': 385,       # 52% of 741
+            'male': 289,         # 39% of 741
+            'gender_nonbinary': 15,
+            'age_18-45': 222,    # 30% of 741
+            'age_46-65': 245,    # 33% of 741
+            'age_65+': 274,      # 37% of 741
+            'hispanic': 67,      # 9%
+            'white': 526,        # 71%
+            'asian': 44,         # 6%
+            'black': 67,         # 9%
+            'other': 37,         # 5%
+            'democrat': 578,     # 78%
+            'independent': 133,  # 18%
+            'hs_or_less': 30,    # 4%
+            'some_college': 141, # 19%
+            'college_2yr': 52,   # 7%
+            'college_4yr': 259,  # 35%
+            'postgrad': 259,     # 35%
+            'sd7': 215,          # 29%
+            'sd8': 126,          # 17%
+            'sd9': 222,          # 30%
+            'landline': 44,      # 6%
+            'text': 697,         # 94%
+        },
+
+        'crosstabs': {
+
+            'Amiwala': {
+                'female': 6, 'male': 8,
+                'age_18-45': 13, 'age_45-65': 6, 'age_65+': 1,
+                'hispanic': 7, 'white': 4, 'asian': 39, 'black': 0,
+                'democrat': 7, 'independent': 5,
+                'very_liberal': None, 'somewhat_liberal': None, 'moderate': None,  # not broken out in wave 2
+                'no_college': None, 'college': None,
+            },
+
+            'Andrew': {
+                'female': 6, 'male': 8,
+                'age_18-45': 5, 'age_45-65': 10, 'age_65+': 6,
+                'hispanic': 0, 'white': 7, 'asian': 12, 'black': 3,
+                'democrat': 6, 'independent': 8,
+                'no_college': None, 'college': None,
+            },
+
+            'Huynh': {
+                'female': 1, 'male': 2,
+                'age_18-45': 1, 'age_45-65': 1, 'age_65+': 1,
+                'hispanic': 2, 'white': 1, 'asian': 0, 'black': 0,
+                'democrat': 2, 'independent': 0,
+                'no_college': None, 'college': None,
+            },
+
+            'Biss': {
+                'female': 28, 'male': 21,
+                'age_18-45': 18, 'age_45-65': 23, 'age_65+': 30,
+                'hispanic': 19, 'white': 27, 'asian': 9, 'black': 22,
+                'democrat': 28, 'independent': 10,
+                'no_college': None, 'college': None,
+            },
+
+            'Fine': {
+                'female': 15, 'male': 12,
+                'age_18-45': 8, 'age_45-65': 11, 'age_65+': 21,
+                'hispanic': 9, 'white': 15, 'asian': 5, 'black': 14,
+                'democrat': 14, 'independent': 12,
+                'no_college': None, 'college': None,
+            },
+
+            'Abughazaleh': {
+                'female': 12, 'male': 29,
+                'age_18-45': 34, 'age_45-65': 17, 'age_65+': 11,
+                'hispanic': 18, 'white': 21, 'asian': 21, 'black': 11,
+                'democrat': 19, 'independent': 26,
+                'no_college': None, 'college': None,
+            },
+
+            'Simmons': {
+                'female': 12, 'male': 7,
+                'age_18-45': 13, 'age_45-65': 8, 'age_65+': 9,
+                'hispanic': 8, 'white': 10, 'asian': 4, 'black': 20,
+                'democrat': 10, 'independent': 7,
+                'no_college': None, 'college': None,
+            },
+        },  # end crosstabs
+
+        # =========================================================================
+        # ISSUE PRIORITY (Q5) — new in wave 2
+        # =========================================================================
+        'issue_priority': {
+            'inflation_cost_of_living': 17,
+            'healthcare': 10,
+            'education': 1,
+            'jobs_economy': 8,
+            'affordable_housing': 2,
+            'immigration_ice': 6,
+            'threats_to_democracy': 46,
+            'israel_palestine': 6,
+            'something_else_not_sure': 4,
+        },
+
+        # =========================================================================
+        # TRUMP APPROVAL (Q1) — new in wave 2
+        # =========================================================================
+        'trump_approval': {
+            'approve': 7,
+            'disapprove': 91,
+            'not_sure': 2,
+        }},
     {
         # =========================================================================
         # IDENTIFICATION
         # =========================================================================
         'name': 'PPP/RoundTable Feb 20-21 2026',
         'date': '2026-02-21',
-        'pollster_id': 'PPP_Feb2026',
+        'pollster_id': 'PPP',
         'sample_size': 501,
+        'wave_id': 1,
         'pollster_quality': 4.5,
         'is_internal': False,
         'has_crosstabs': True,
