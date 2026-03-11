@@ -30,7 +30,7 @@ PPP_SENATE_DISTRICTS = [7, 8, 9]   # SD-7 (Evanston/North Shore), SD-8 (North Ch
 # File paths
 SHAPEFILE_PATH = 'data/shapefile/IL24/IL24.shp'
 CONGRESSIONAL_DISTRICTS_PATH = 'data/shapefile/congressional_districts.shp'
-SENATE_DISTRICTS_PATH = 'data/shapefile/state_senate/1772312996199_Senate Plan.shp'
+SENATE_DISTRICTS_PATH = 'data/shapefile/State_Senate'
 INPUT_CSV = 'data/csv_data/expectations/IL_09_precinct_probabilities.csv'
 OUTPUT_CSV = 'data/csv_data/expectations/IL_09_precinct_probabilities.csv'
 POLL_BASELINE_FILE = 'poll_baseline.json'
@@ -270,6 +270,7 @@ def build_senate_district_weights(df):
               f"{nonzero} precincts with >1% overlap")
 
     return df
+
 
 
 # ============================================================================
@@ -798,7 +799,25 @@ def main():
 
     # Build senate district overlap weights (spatial join to shapefile)
     df = build_senate_district_weights(df)
+    df = build_senate_district_weights(df)
 
+    # --- TEMPORARY DIAGNOSTIC ---
+    import geopandas as gpd
+    gdf_senate = gpd.read_file(SENATE_DISTRICTS_PATH)
+    print("\n=== SENATE SHAPEFILE DEBUG ===")
+    print(f"Columns: {gdf_senate.columns.tolist()}")
+    print(f"CRS: {gdf_senate.crs}")
+    for col in gdf_senate.columns:
+        print(f"  {col}: {gdf_senate[col].head(5).tolist()}")
+    print(f"\nsd_weight_7 nonzero: {(df['sd_weight_7'] > 0.01).sum()}")
+    print(f"sd_weight_8 nonzero: {(df['sd_weight_8'] > 0.01).sum()}")
+    print(f"sd_weight_9 nonzero: {(df['sd_weight_9'] > 0.01).sum()}")
+    print(f"sd_outside_flag True: {df['sd_outside_flag'].sum()}")
+    n_geom_matched = df['JoinField_norm'].isin(
+        gpd.read_file(SHAPEFILE_PATH)['JoinField'].str.upper()
+    ).sum() if 'JoinField_norm' in df.columns else 'N/A'
+    print(f"JoinField matches: {n_geom_matched}/{len(df)}")
+    # --- END DIAGNOSTIC ---
     # Step 1: Apply modeling (senate districts take priority over old boosts)
     df = apply_crosstab_modeling(df, baseline_avg, scaled_crosstabs, senate_crosstabs)
 

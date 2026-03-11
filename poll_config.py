@@ -460,7 +460,17 @@ POLLS = [
             'approve': 7,
             'disapprove': 91,
             'not_sure': 2,
-        }},
+        },
+        'senate_district_crosstabs': {
+            'sd_7': {'Amiwala': 7, 'Andrew': 1, 'Huynh': 3, 'Biss': 19, 'Fine': 9, 'Abughazaleh': 24, 'Simmons': 19,
+                     'undecided': 15},
+            'sd_8': {'Amiwala': 13, 'Andrew': 10, 'Huynh': 0, 'Biss': 21, 'Fine': 12, 'Abughazaleh': 22, 'Simmons': 10,
+                     'undecided': 11},
+            'sd_9': {'Amiwala': 3, 'Andrew': 11, 'Huynh': 0, 'Biss': 31, 'Fine': 17, 'Abughazaleh': 13, 'Simmons': 6,
+                     'undecided': 16},
+            'sd_other': {'Amiwala': 5, 'Andrew': 6, 'Huynh': 2, 'Biss': 20, 'Fine': 17, 'Abughazaleh': 22, 'Simmons': 2,
+                         'undecided': 24},
+        },},
     {
         # =========================================================================
         # IDENTIFICATION

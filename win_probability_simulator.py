@@ -165,22 +165,6 @@ def aggregate_second_choice_matrix(polls):
 # ============================================================================
 
 def aggregate_senate_district_crosstabs(polls):
-    """
-    Extract senate district vote share crosstabs from polls.
-
-    Since PPP is currently the only poll with senate district data, this
-    returns those numbers directly (weighted by poll quality/recency if
-    multiple polls provide SD data in the future).
-
-    Returns dict matching the poll_config structure:
-    {
-        'sd_7':     {'Fine': 6,  'Biss': 24, ...},
-        'sd_8':     {'Fine': 14, 'Biss': 27, ...},
-        'sd_9':     {'Fine': 24, 'Biss': 27, ...},
-        'sd_other': {'Fine': 18, 'Biss': 19, ...},
-    }
-    or None if no polls contain senate district crosstabs.
-    """
     sd_polls = sorted(
         [p for p in polls if p.get('senate_district_crosstabs')],
         key=lambda p: p['date'],
@@ -190,19 +174,18 @@ def aggregate_senate_district_crosstabs(polls):
     if not sd_polls:
         return None
 
-    if len(sd_polls) == 1:
-        # Only one poll has SD data — pass through directly
-        result = sd_polls[0]['senate_district_crosstabs']
-        print(f"\n  Senate district crosstabs from: {sd_polls[0]['name']}")
-        for sd_key, sd_data in result.items():
-            top = sorted(
-                [(c, v) for c, v in sd_data.items() if c in CANDIDATES],
-                key=lambda x: -x[1]
-            )[:3]
-            top_str = ', '.join(f"{c}: {v}%" for c, v in top)
-            print(f"    {sd_key}: {top_str} ...")
-        return result
-
+    # Always use most recent poll — SD crosstabs shouldn't be averaged across
+    # waves since they're a direct geographic snapshot, not a running average
+    result = sd_polls[0]['senate_district_crosstabs']
+    print(f"\n  Senate district crosstabs from: {sd_polls[0]['name']}")
+    for sd_key, sd_data in result.items():
+        top = sorted(
+            [(c, v) for c, v in sd_data.items() if c in CANDIDATES],
+            key=lambda x: -x[1]
+        )[:3]
+        top_str = ', '.join(f"{c}: {v}%" for c, v in top)
+        print(f"    {sd_key}: {top_str} ...")
+    return result
     # Multiple polls with SD data — weighted average
     print(f"\n  Aggregating senate district crosstabs from {len(sd_polls)} polls")
 
