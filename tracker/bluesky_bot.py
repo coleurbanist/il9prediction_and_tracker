@@ -143,19 +143,34 @@ class BlueskyBot:
 
         self._last_post_time = time.time()
 
-    def post_elimination(self, candidate_name, results):
+    def post_eliminations(self, candidates, results):
         """
-        Post an immediate elimination thread.
-        Skips if this candidate was already announced.
-        """
-        if candidate_name in self._eliminated:
-            return
-        self._eliminated.add(candidate_name)
+        Post a single elimination thread for one or more candidates.
+        Skips candidates already announced. No-ops if all already announced.
 
-        elim_text = f'❌ {candidate_name} has been mathematically eliminated from the IL-09 Democratic primary.'
+        candidates: set or list of candidate short names
+        """
+        new_ones = [c for c in candidates if c not in self._eliminated]
+        if not new_ones:
+            return
+        for c in new_ones:
+            self._eliminated.add(c)
+
+        if len(new_ones) == 1:
+            names_str = new_ones[0]
+            verb = 'is'
+        elif len(new_ones) == 2:
+            names_str = f'{new_ones[0]} and {new_ones[1]}'
+            verb = 'are'
+        else:
+            names_str = ', '.join(new_ones[:-1]) + f', and {new_ones[-1]}'
+            verb = 'are'
+
+        elim_text = (
+            f'{names_str} {verb} projected to not win the IL-09 primary.'
+        )
         root_ref = self._post(elim_text)
 
-        # Follow with current standings as a reply
         if root_ref:
             thresholds_met = self._thresholds_met(results)
             standings = self._format_root(results, None, None, thresholds_met)
@@ -163,6 +178,10 @@ class BlueskyBot:
             self._reply('Lake and McHenry County results via civicAPI\ncivicapi.org', root_ref, root_ref)
 
         self._last_post_time = time.time()
+
+    def post_elimination(self, candidate_name, results):
+        """Single-candidate convenience wrapper — delegates to post_eliminations."""
+        self.post_eliminations([candidate_name], results)
 
     def post_projected_winner(self, candidate_name, win_prob_pct, results):
         """Post an immediate projected winner thread."""
@@ -365,12 +384,8 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO, format='%(message)s')
 
     print('Running dry-run test of BlueskyBot...\n')
-    from dotenv import load_dotenv
-
-    load_dotenv()
 
     bot = BlueskyBot(dry_run=True)
-
 
     # Simulate Phase 1 results (before thresholds)
     mock_results_phase1 = {

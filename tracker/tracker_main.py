@@ -35,10 +35,12 @@ from win_probability_simulator import (
 
 # Scrapers
 from Cook_County_Scraper import CookCountyScraper
-from mchenry_lake import fetch_lake_mchenry
+from mchenry_lake import LakeMcHenryScraper
+from cook_precinct_expectations import CookPrecinctExpectations
 
 # Bluesky bot
 from bluesky_bot import BlueskyBot
+from election_logger import ElectionLogger
 
 # Chicago BOE scraper — build day-of; stub provided below so the rest
 # of the file can be written and tested beforehand.
@@ -101,6 +103,9 @@ DISPLAY_THRESHOLD = {
 # Win-probability call threshold
 WIN_PROB_CALL_THRESHOLD = 97.0
 
+# Minimum district pct reporting before elimination logic activates
+MIN_REPORTING_FOR_ELIMINATION = 0.20
+
 # Mathematical elimination: a candidate is eliminated when even their
 # p90 ceiling (best realistic scenario) cannot beat the current leader's floor
 ELIMINATION_CEILING_PERCENTILE = 90
@@ -133,7 +138,7 @@ def _build_composite_weights(current):
 
 # ── Jurisdiction fetching ─────────────────────────────────────────────────────
 
-def fetch_all_jurisdictions(cook_scraper):
+def fetch_all_jurisdictions(cook_scraper, lm_scraper):
     """
     Returns a dict with one entry per jurisdiction, each shaped as:
         {
@@ -148,34 +153,38 @@ def fetch_all_jurisdictions(cook_scraper):
     # Chicago
     try:
         chi = fetch_chicago()
-        chi['pct_reported'] = (
-            chi['precincts_reported'] / chi['total_precincts']
-            if chi.get('total_precincts') else 0.0
-        )
+        # Support either pct_reported or pct_reporting key name from the real scraper
+        if 'pct_reported' not in chi:
+            total = chi.get('total_precincts') or TOTAL_PRECINCTS['chicago']
+            chi['pct_reported'] = chi['precincts_reported'] / total if total else 0.0
         results['chicago'] = chi
     except Exception as e:
         print(f"[{_ts()}] Chicago fetch error: {e}")
         results['chicago'] = _empty_jurisdiction(TOTAL_PRECINCTS['chicago'])
 
     # Cook County
+    _cook_raw = None
     try:
-        cook_raw = cook_scraper.fetch()
-        results['cook'] = cook_raw
+        _cook_raw = cook_scraper.fetch()
+        results['cook'] = _normalize_cook(_cook_raw)
     except Exception as e:
         print(f"[{_ts()}] Cook fetch error: {e}")
         results['cook'] = _empty_jurisdiction(TOTAL_PRECINCTS['cook'])
 
     # Lake + McHenry (civicAPI)
     try:
-        lm = fetch_lake_mchenry()
-        results['lake']    = lm['lake']
-        results['mchenry'] = lm['mchenry']
+        lm = lm_scraper.fetch()
+        if lm:
+            results['lake']    = _normalize_lm_county(lm['lake'])
+            results['mchenry'] = _normalize_lm_county(lm['mchenry'])
+        else:
+            raise ValueError("civicAPI returned None")
     except Exception as e:
         print(f"[{_ts()}] Lake/McHenry fetch error: {e}")
         results['lake']    = _empty_jurisdiction(None)
         results['mchenry'] = _empty_jurisdiction(None)
 
-    return results
+    return results, _cook_raw
 
 
 def _empty_jurisdiction(total_precincts):
@@ -184,6 +193,52 @@ def _empty_jurisdiction(total_precincts):
         'total_precincts':    total_precincts,
         'pct_reported':       0.0,
         'candidates':         {c: {'votes': 0, 'pct': 0.0} for c in CANDIDATES},
+    }
+
+
+def _normalize_cook(cook_data):
+    """
+    Converts CookCountyScraper output to standard jurisdiction shape.
+    Cook returns totals as {candidate_name: votes} under 'totals'.
+    """
+    totals = cook_data.get('totals', {})
+    total_votes = max(sum(totals.values()), 1)
+    normalized_cands = {
+        name: {'votes': votes, 'pct': votes / total_votes * 100}
+        for name, votes in totals.items()
+        if name in CANDIDATES
+    }
+    # Pad missing candidates
+    for c in CANDIDATES:
+        if c not in normalized_cands:
+            normalized_cands[c] = {'votes': 0, 'pct': 0.0}
+    return {
+        'precincts_reported': cook_data.get('precincts_reporting', 0),
+        'total_precincts':    cook_data.get('total_precincts'),
+        'pct_reported':       cook_data.get('pct_reporting', 0.0),
+        'candidates':         normalized_cands,
+    }
+
+
+def _normalize_lm_county(county_data):
+    """
+    Converts LakeMcHenryScraper output shape:
+        {'candidates': {name: votes}, 'pct_reporting': float}
+    to the standard jurisdiction shape used by main.py:
+        {'candidates': {name: {'votes': int, 'pct': float}}, 'pct_reported': float, ...}
+    """
+    raw_cands = county_data.get('candidates', {})
+    total = max(sum(raw_cands.values()), 1)
+    normalized_cands = {
+        name: {'votes': votes, 'pct': votes / total * 100}
+        for name, votes in raw_cands.items()
+    }
+    pct = county_data.get('pct_reporting', 0.0)
+    return {
+        'precincts_reported': None,   # civicAPI doesn't expose precinct count
+        'total_precincts':    None,
+        'pct_reported':       pct,
+        'candidates':         normalized_cands,
     }
 
 
@@ -250,21 +305,49 @@ def merge_district(jurisdictions):
 
 # ── Blended baseline ──────────────────────────────────────────────────────────
 
-def build_blended_baseline(actual_share, poll_baseline, pct_reported):
+def build_blended_baseline(actual_share, poll_baseline, pct_reported,
+                            cook_blended=None, cook_weight=0.497):
     """
     Blends observed vote shares with poll priors.
 
+    For Cook County specifically, if cook_blended is provided, uses the
+    precinct-level blended shares (actual reported + model for unreported)
+    rather than the district-wide actual_share. This is more accurate
+    because it accounts for which specific precincts have reported.
+
+    For all other jurisdictions, uses the simple sqrt-weighted blend.
+
     As pct_reported → 1.0 the blended baseline converges to actual results.
     As pct_reported → 0.0 it stays at the poll prior.
-
-    Uses a non-linear blend (sqrt) so that even 25% reporting meaningfully
-    anchors the simulation to real data.
     """
-    w = min(pct_reported ** 0.5, 1.0)   # sqrt blend weight
-    return {
-        c: w * actual_share.get(c, poll_baseline[c]) + (1 - w) * poll_baseline[c]
-        for c in CANDIDATES
-    }
+    w = min(pct_reported ** 0.5, 1.0)   # sqrt blend weight for non-Cook
+
+    if cook_blended is not None:
+        # Reconstruct district share replacing Cook component with precinct-blended
+        # Other jurisdictions still use simple actual_share blend
+        non_cook_weight = 1.0 - cook_weight
+        blended = {}
+        for c in CANDIDATES:
+            # Cook contribution: precinct-level blended (already accounts for
+            # unreported precincts via model, so use directly weighted by cook_weight)
+            cook_contrib = cook_blended.get(c, poll_baseline[c]) * cook_weight
+            # Non-Cook contribution: sqrt blend of actual vs poll prior
+            non_cook_actual = actual_share.get(c, poll_baseline[c])
+            non_cook_contrib = (
+                w * non_cook_actual + (1 - w) * poll_baseline[c]
+            ) * non_cook_weight
+            blended[c] = cook_contrib + non_cook_contrib
+        # Re-normalize to 100%
+        total = sum(blended.values())
+        if total > 0:
+            blended = {c: blended[c] / total * 100 for c in CANDIDATES}
+        return blended
+    else:
+        w = min(pct_reported ** 0.5, 1.0)
+        return {
+            c: w * actual_share.get(c, poll_baseline[c]) + (1 - w) * poll_baseline[c]
+            for c in CANDIDATES
+        }
 
 
 # ── Monte Carlo (election night version) ─────────────────────────────────────
@@ -375,16 +458,19 @@ def _build_bot_results(merged, jurisdictions):
             'lake':     {'candidates': {name: votes}, 'pct_reporting': float},
             'mchenry':  {'candidates': {name: votes}, 'pct_reporting': float},
         }
+
+    Note: bot expects candidates as {name: int votes} and pct_reporting (not pct_reported).
     """
     bot_results = {
         'district': {
-            'candidates':   merged['votes'],
+            'candidates':    merged['votes'],           # already {name: int}
             'pct_reporting': merged['pct_reported'],
         }
     }
     for jname in ('chicago', 'cook', 'lake', 'mchenry'):
         jdata = jurisdictions.get(jname, {})
         cands = jdata.get('candidates', {})
+        # cands is {name: {'votes': int, 'pct': float}} — unwrap to {name: int}
         bot_results[jname] = {
             'candidates':    {c: cands[c]['votes'] for c in CANDIDATES if c in cands},
             'pct_reporting': jdata.get('pct_reported', 0.0),
@@ -410,6 +496,7 @@ def main():
 
     # Initialise scrapers and bot
     cook_scraper = CookCountyScraper()
+    lm_scraper = LakeMcHenryScraper()
     bot = BlueskyBot(dry_run=False)
 
     # State
@@ -417,6 +504,8 @@ def main():
     prev_shares       = {}
     last_post_time    = 0.0
     tick              = 0
+    call_fired        = False
+    logger            = ElectionLogger()
 
     print("\nEntering poll loop (Ctrl+C to stop)...\n")
 
@@ -425,18 +514,39 @@ def main():
         loop_start = time.time()
 
         # ── 1. Fetch ──────────────────────────────────────────────────────
-        jurisdictions = fetch_all_jurisdictions(cook_scraper)
-        merged        = merge_district(jurisdictions)
+        jurisdictions, cook_raw = fetch_all_jurisdictions(cook_scraper, lm_scraper)
+        merged = merge_district(jurisdictions)
+
+        # Warn if Cook precinct name match rate drops below 80%
+        reported_names = cook_raw.get('reported', set()) if cook_raw else set()
+        match_rate = cook_exp.match_rate(reported_names)
+        if reported_names and match_rate < 0.80:
+            print(f"  ⚠️  Cook precinct name match rate: {match_rate:.0%} "
+                  f"— check name format in Cook_County_Scraper.py")
 
         # ── 2. Simulation ─────────────────────────────────────────────────
+        # Cook: use precinct-level blended shares; others: district-wide blend
+        if cook_raw and cook_raw.get('reported'):
+            cook_blended = cook_exp.blended_shares(cook_raw)
+        else:
+            cook_blended = None
         blended = build_blended_baseline(
-            merged['actual_share'], poll_baseline, merged['pct_reported']
+            merged['actual_share'], poll_baseline, merged['pct_reported'],
+            cook_blended=cook_blended,
+            cook_weight=JURISDICTION_VOTE_WEIGHT['cook'],
         )
         win_probs, ceiling = run_election_night_simulation(blended, poll_params)
 
         # ── 3. Elimination check ──────────────────────────────────────────
-        newly_eliminated = check_eliminations(win_probs, ceiling, eliminated)
+        # Don't fire eliminations until 20% of district is in
+        if merged['pct_reported'] >= MIN_REPORTING_FOR_ELIMINATION:
+            newly_eliminated = check_eliminations(win_probs, ceiling, eliminated)
+        else:
+            newly_eliminated = set()
         eliminated |= newly_eliminated
+
+        # ── 3b. Log this tick ────────────────────────────────────────────
+        logger.log(tick, merged, win_probs, ceiling, eliminated, call_fired)
 
         # ── 4. Decide whether to post ─────────────────────────────────────
         show_wp    = thresholds_met(merged)
@@ -466,12 +576,12 @@ def main():
                 bot_results = _build_bot_results(merged, jurisdictions)
 
                 if trigger_elim:
-                    for cand in newly_eliminated:
-                        bot.post_elimination(cand, bot_results)
+                    bot.post_eliminations(newly_eliminated, bot_results)
 
                 if trigger_call:
                     winner = max(CANDIDATES, key=lambda c: win_probs[c])
                     bot.post_projected_winner(winner, win_probs[winner], bot_results)
+                    call_fired = True
                 elif time_to_post:
                     projected = (
                         max(CANDIDATES, key=lambda c: win_probs[c])
@@ -501,7 +611,94 @@ def main():
 
 
 if __name__ == '__main__':
+    import sys
+    if '--preflight' in sys.argv:
+        try:
+            preflight()
+        except KeyboardInterrupt:
+            print("\nPreflight cancelled.")
+    else:
+        try:
+            main()
+        except KeyboardInterrupt:
+            print("\n\nTracker stopped.")
+
+
+def preflight():
+    """
+    Dry-run one full tick. Posts nothing to Bluesky.
+    Run with:  python main.py --preflight
+    """
+    print("=" * 60)
+    print("IL-09 PREFLIGHT CHECK")
+    print(f"Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print("=" * 60)
+
+    # 1. Poll baseline
+    print(f"\n[1/5] Loading poll baseline...")
     try:
-        main()
-    except KeyboardInterrupt:
-        print("\n\nTracker stopped.")
+        poll_params = load_poll_baseline()
+        poll_baseline = poll_params['baseline']
+        print(f"  OK Loaded")
+        for c in CANDIDATES:
+            print(f"     {c:<16} {poll_baseline[c]:.1f}%")
+    except Exception as e:
+        print(f"  FAILED: {e}")
+        return
+
+    # 2. Scrapers
+    print(f"\n[2/5] Initialising scrapers...")
+    cook_scraper = CookCountyScraper()
+    lm_scraper   = LakeMcHenryScraper()
+    print(f"  OK Cook and Lake/McHenry scrapers ready")
+
+    # 3. Fetch
+    print(f"\n[3/5] Fetching all jurisdictions...")
+    jurisdictions = fetch_all_jurisdictions(cook_scraper, lm_scraper)
+    for jname, jdata in jurisdictions.items():
+        pct = jdata.get('pct_reported', 0.0)
+        total_votes = sum(
+            jdata['candidates'][c]['votes']
+            for c in CANDIDATES
+            if c in jdata['candidates']
+        )
+        status = "OK  " if jdata['candidates'] else "WARN"
+        print(f"  [{status}] {jname.upper():<10} pct_reported={pct:.1%}  total_votes={total_votes:,}")
+        if total_votes > 0:
+            top = sorted(
+                [(c, jdata['candidates'][c]['votes'])
+                 for c in CANDIDATES if c in jdata['candidates']],
+                key=lambda x: -x[1]
+            )[:3]
+            for cand, votes in top:
+                print(f"         {cand:<16} {votes:,}")
+        else:
+            print(f"         (zero votes -- expected before polls close)")
+
+    # 4. Merge + simulate
+    print(f"\n[4/5] Merging and simulating (1k iterations)...")
+    merged = merge_district(jurisdictions)
+    print(f"  District pct_reported: {merged['pct_reported']:.1%}")
+    blended = build_blended_baseline(
+        merged['actual_share'], poll_baseline, merged['pct_reported']
+    )
+    win_probs, ceiling = run_election_night_simulation(blended, poll_params, n=1_000)
+    print(f"  Win probs (illustrative -- poll prior only until votes come in):")
+    for c in sorted(CANDIDATES, key=lambda x: -win_probs[x]):
+        print(f"     {c:<16} {win_probs[c]:.1f}%  (p90: {ceiling[c]:.1f}%)")
+
+    # 5. Bot
+    print(f"\n[5/5] Testing Bluesky bot (dry_run=True)...")
+    try:
+        bot = BlueskyBot(dry_run=True)
+        bot_results = _build_bot_results(merged, jurisdictions)
+        bot.post_thread(bot_results, win_prob=None, projected_winner=None)
+        print(f"  OK Bot dry-run complete -- check post text above")
+    except Exception as e:
+        print(f"  FAILED: {e}")
+
+    print(f"\n{'=' * 60}")
+    print(f"PREFLIGHT COMPLETE -- {datetime.now().strftime('%H:%M:%S')}")
+    print(f"{'=' * 60}")
+    print(f"\nAll good? Run:  python main.py")
+    print(f"Chicago stub?  Build chicago_boe_scraper.py first.")
