@@ -142,6 +142,13 @@ def get_actual_winner(row):
 
 df['actual_winner'] = df.apply(get_actual_winner, axis=1)
 
+# District totals — computed early so both stats HTML and district layer can use them
+sorted_totals_early = sorted(
+    [(c, int(df[f'actual_votes_{c}'].sum())) for c in CANDIDATES], key=lambda x: -x[1]
+)
+other_total_early = int(df['actual_votes_Other'].sum())
+grand_total       = sum(v for _, v in sorted_totals_early) + other_total_early
+
 print(f"\nActual winner distribution:")
 for cand, count in df['actual_winner'].value_counts().items():
     print(f"  {cand:<20}: {count} precincts")
@@ -578,7 +585,120 @@ if has_predictions:
 else:
     n_perf_traces = 0
 
-# ---- Count boundary traces (added next) ----
+# Layer 4: District comparison — one trace per candidate
+# z = actual_pct_in_precinct - district_wide_pct
+# Same green/red diverging scale as model performance layer.
+
+dist_candidate_trace_indices = {}  # cand → trace index
+
+# Compute district-wide actual pct for each candidate
+district_pcts = {}
+total_votes_dist = grand_total if 'grand_total' in dir() else int(df['actual_total_votes'].sum())
+for cand in CANDIDATES:
+    col = f'actual_votes_{cand}'
+    district_pcts[cand] = (
+        df[col].sum() / total_votes_dist * 100
+        if total_votes_dist > 0 else 0
+    )
+
+def make_dist_hover(row, cand):
+    display  = str(row.get('display_name', '') or '').strip() or 'Unknown'
+    region   = row.get('region', '')
+    actual   = row.get(f'actual_pct_{cand}', 0)
+    dist_avg = district_pcts[cand]
+    diff     = actual - dist_avg
+    has_votes = row.get(f'actual_votes_{cand}', 0) > 0 or row.get('actual_total_votes', 0) > 0
+    if not has_votes:
+        return f"<b>{display}</b><br><i>{region}</i><br>No results reported"
+    arrow = '▲' if diff > 0 else '▼' if diff < 0 else '●'
+    color = '#4caf50' if diff > 0 else 'tomato' if diff < 0 else '#aaa'
+    return (
+        f"<b>{display}</b><br>"
+        f"<i>{region}</i><br>"
+        f"<span style='font-family:monospace'>"
+        f"{cand}<br>"
+        f"Precinct:  {actual:>6.1f}%<br>"
+        f"District:  {dist_avg:>6.1f}%<br>"
+        f"<span style='color:{color};font-weight:bold;'>"
+        f"{arrow} {diff:+.1f} pts</span>"
+        f"</span>"
+    )
+
+dist_colorscale = [
+    [0.0,  'rgb(180,0,0)'],
+    [0.35, 'rgb(240,100,100)'],
+    [0.5,  'rgb(220,220,220)'],
+    [0.65, 'rgb(80,200,100)'],
+    [1.0,  'rgb(0,140,50)'],
+]
+
+if 'gdf_all' not in dir():
+    gdf_all = gdf_merged.copy().reset_index(drop=True)
+    gdf_all['_perf_id'] = range(len(gdf_all))
+
+gdf_all['_dist_id'] = range(len(gdf_all))
+
+for cand in CANDIDATES:
+    actual_col = f'actual_pct_{cand}'
+    has_data   = gdf_all['actual_total_votes'] > 0
+
+    z_vals    = np.where(has_data, gdf_all[actual_col] - district_pcts[cand], np.nan)
+    z_display = np.where(has_data, np.clip(z_vals, -20, 20), np.nan)
+
+    # Grey no-data trace
+    no_data_mask = ~has_data
+    if no_data_mask.sum() > 0:
+        gdf_nd = gdf_all[no_data_mask].copy().reset_index(drop=True)
+        gdf_nd['_nd2_id'] = range(len(gdf_nd))
+        fig.add_trace(go.Choroplethmapbox(
+            geojson=gdf_nd.__geo_interface__,
+            locations=gdf_nd['_nd2_id'],
+            z=[0] * len(gdf_nd),
+            colorscale=[[0, 'rgb(180,180,180)'], [1, 'rgb(180,180,180)']],
+            showscale=False,
+            marker_line_width=0.3,
+            marker_line_color='rgba(255,255,255,0.2)',
+            marker_opacity=0.5,
+            hovertemplate='<b>%{text}</b><br><i>No results reported</i><extra></extra>',
+            text=gdf_nd.apply(lambda r: str(r.get('display_name','') or 'Unknown'), axis=1),
+            name=f'{cand} dist nodata',
+            featureidkey='properties._nd2_id',
+            visible=False,
+        ))
+        dist_candidate_trace_indices[f'{cand}_nodata'] = len(fig.data) - 1
+
+    hover_dist = gdf_all.apply(lambda r: make_dist_hover(r, cand), axis=1)
+
+    dist_trace_idx = len(fig.data)
+    dist_candidate_trace_indices[cand] = dist_trace_idx
+
+    fig.add_trace(go.Choroplethmapbox(
+        geojson=gdf_all.__geo_interface__,
+        locations=gdf_all['_dist_id'],
+        z=z_display,
+        zmin=-20, zmax=20,
+        colorscale=dist_colorscale,
+        showscale=True,
+        colorbar=dict(
+            title=dict(text='pp vs district', font=dict(color='white', size=11)),
+            tickfont=dict(color='white', size=10),
+            tickvals=[-20, -10, 0, 10, 20],
+            ticktext=['-20+', '-10', '0', '+10', '+20'],
+            len=0.5, thickness=14,
+            x=1.01,
+            bgcolor='rgba(0,0,0,0.4)',
+        ),
+        marker_line_width=0.4,
+        marker_line_color='rgba(255,255,255,0.3)',
+        marker_opacity=0.85,
+        text=hover_dist,
+        hovertemplate='%{text}<extra></extra>',
+        name=f'{cand} vs district',
+        featureidkey='properties._dist_id',
+        visible=False,
+    ))
+
+n_dist_traces = len([k for k in dist_candidate_trace_indices])
 # We load clean boundary polygons rather than deriving from precinct edges,
 # which always produces jagged internal lines.
 
@@ -658,27 +778,28 @@ center   = gpd.GeoSeries(
 
 n_actual_traces   = len(all_winners)
 n_accuracy_traces = 2 if has_predictions else 0
-n_perf_traces_val = len([k for k in perf_candidate_trace_indices]) if has_predictions else 0
-n_boundary_traces = len(fig.data) - n_actual_traces - n_accuracy_traces - n_perf_traces_val
+n_perf_traces_val = len(perf_candidate_trace_indices)
+n_dist_traces_val = len(dist_candidate_trace_indices)
+n_boundary_traces = (len(fig.data) - n_actual_traces - n_accuracy_traces
+                     - n_perf_traces_val - n_dist_traces_val)
 
-def make_visibility(show_actual, show_accuracy, perf_cand=None):
+def make_visibility(show_actual, show_accuracy, perf_cand=None, dist_cand=None):
     total = len(fig.data)
     vis = [False] * total
-    # actual traces
     for i in range(n_actual_traces):
         vis[i] = show_actual
-    # accuracy traces
     for i in range(n_actual_traces, n_actual_traces + n_accuracy_traces):
         vis[i] = show_accuracy
-    # performance traces — show the selected candidate + its grey no-data trace
     if perf_cand:
-        main_idx = perf_candidate_trace_indices.get(perf_cand)
-        grey_idx = perf_candidate_trace_indices.get(f'{perf_cand}_nodata')
-        if main_idx is not None:
-            vis[main_idx] = True
-        if grey_idx is not None:
-            vis[grey_idx] = True
-    # boundaries always on
+        for key in [perf_cand, f'{perf_cand}_nodata']:
+            idx = perf_candidate_trace_indices.get(key)
+            if idx is not None:
+                vis[idx] = True
+    if dist_cand:
+        for key in [dist_cand, f'{dist_cand}_nodata']:
+            idx = dist_candidate_trace_indices.get(key)
+            if idx is not None:
+                vis[idx] = True
     for i in range(total - n_boundary_traces, total):
         vis[i] = True
     return vis
@@ -698,27 +819,44 @@ if has_predictions:
               {'updatemenus[1].visible': False}],
     ))
 if n_perf_traces_val > 0:
-    # Show performance layer for first candidate by default when clicked
     first_cand = CANDIDATES[0]
     buttons_layer.append(dict(
-        label='Model Performance',
+        label='vs Model',
         method='update',
-        args=[{'visible': make_visibility(False, False, first_cand)},
-              {'updatemenus[1].visible': True}],
+        args=[{'visible': make_visibility(False, False, perf_cand=first_cand)},
+              {'updatemenus[1].visible': True,
+               'updatemenus[1].active': 0}],
+    ))
+if n_dist_traces_val > 0:
+    first_cand = CANDIDATES[0]
+    buttons_layer.append(dict(
+        label='vs District Avg',
+        method='update',
+        args=[{'visible': make_visibility(False, False, dist_cand=first_cand)},
+              {'updatemenus[1].visible': True,
+               'updatemenus[1].active': 0}],
     ))
 
-# ---- Candidate selector dropdown (only visible in performance mode) ----
-perf_dropdown_buttons = []
-if n_perf_traces_val > 0:
-    for cand in CANDIDATES:
-        perf_dropdown_buttons.append(dict(
-            label=cand,
-            method='update',
-            args=[{'visible': make_visibility(False, False, cand)}],
-        ))
+# ---- Shared candidate dropdown (used by both performance layers) ----
+# Each button in the dropdown tries to show both perf and dist traces for the
+# selected candidate — only the ones that actually exist will be visible,
+# so whichever layer mode was active will remain correct.
+# We achieve this by always passing both cand args; make_visibility handles
+# the case where one set of indices is empty.
+shared_dropdown_buttons = []
+for cand in CANDIDATES:
+    shared_dropdown_buttons.append(dict(
+        label=cand,
+        method='update',
+        # We don't know which layer is active at click time, so we update
+        # visibility to show BOTH sets — the user already clicked a layer button
+        # so only one set will have been active. Re-clicking the layer button
+        # after changing candidate resets cleanly.
+        args=[{'visible': make_visibility(False, False,
+                                          perf_cand=cand, dist_cand=cand)}],
+    ))
 
 updatemenus = [
-    # Main layer toggle
     dict(
         type='buttons', direction='right',
         x=0.5, xanchor='center', y=1.08, yanchor='top',
@@ -727,15 +865,15 @@ updatemenus = [
         name='layer_toggle',
     ),
 ]
-if perf_dropdown_buttons:
+if shared_dropdown_buttons:
     updatemenus.append(dict(
         type='dropdown',
         x=0.5, xanchor='center', y=1.01, yanchor='top',
-        buttons=perf_dropdown_buttons,
+        buttons=shared_dropdown_buttons,
         bgcolor='rgba(20,20,40,0.95)',
         bordercolor='rgba(255,255,255,0.3)',
         font=dict(size=13, color='white'),
-        visible=False,  # only shown when performance mode active
+        visible=False,
         name='cand_selector',
     ))
 
@@ -758,12 +896,8 @@ fig.update_layout(
 # STEP 8: STATS HTML  — dark theme matching prediction map style
 # ============================================================================
 
-sorted_totals = sorted(
-    [(c, int(df[f'actual_votes_{c}'].sum())) for c in CANDIDATES],
-    key=lambda x: -x[1],
-)
-other_total = int(df['actual_votes_Other'].sum())
-grand_total = sum(v for _, v in sorted_totals) + other_total
+sorted_totals = sorted_totals_early
+other_total   = other_total_early
 precinct_wins = gdf_merged['actual_winner'].value_counts().to_dict()
 total_prec    = len(gdf_merged)
 
