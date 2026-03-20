@@ -5,6 +5,7 @@ Updated to include:
   - Favorability aware-rate weighting in undecided allocation (pin 1)
   - Second-choice soft constraint for correlated candidate drift (pin 2)
   - Senate district crosstabs passed through to poll_baseline.json
+  - Winning simulation snapshots for median-win and closest-win scenario maps
 """
 
 # ============================================================================
@@ -787,9 +788,15 @@ def run_monte_carlo(polls, n_simulations=N_SIMULATIONS):
     print("-" * 70)
 
     tracking_candidates = CANDIDATES + ['Other_Breakout']
-    wins         = {cand: 0    for cand in tracking_candidates}
-    all_results  = {cand: []   for cand in tracking_candidates}
-    best_scenarios = {cand: 0.0 for cand in CANDIDATES}
+    wins               = {cand: 0   for cand in tracking_candidates}
+    all_results        = {cand: []  for cand in tracking_candidates}
+    best_scenarios     = {cand: 0.0 for cand in CANDIDATES}
+
+    # NEW: store the full result snapshot for every simulation a candidate wins.
+    # Keyed by winner; each entry is a dict {candidate: normalised_vote_share}.
+    # Only CANDIDATES (not Other_Breakout) are stored — these snapshots feed
+    # directly into the precinct scenario pipeline as calibration baselines.
+    winning_simulations = {cand: [] for cand in CANDIDATES}
 
     print(f"\nRunning {n_simulations:,} simulations...")
 
@@ -807,6 +814,14 @@ def run_monte_carlo(polls, n_simulations=N_SIMULATIONS):
             all_results[winner] = [0] * i
         wins[winner] += 1
 
+        # NEW: store snapshot for median-win / closest-win scenario analysis.
+        # Only store for the 7 main candidates (winner in winning_simulations
+        # means they are a named candidate, not Other_Breakout).
+        if winner in winning_simulations:
+            winning_simulations[winner].append(
+                {c: results.get(c, 0.0) for c in CANDIDATES}
+            )
+
         for cand, score in results.items():
             if cand in best_scenarios and score > best_scenarios[cand]:
                 best_scenarios[cand] = score
@@ -822,9 +837,113 @@ def run_monte_carlo(polls, n_simulations=N_SIMULATIONS):
         for c in CANDIDATES
     }
 
+    # NEW: included in return tuple so main() can export win_scenarios.json
     return (win_probs, percentiles, all_results, wins, best_scenarios,
             scaled_crosstabs, crosstab_moes, fav_weights,
-            transfer_matrix, no_second_rates, senate_crosstabs)
+            transfer_matrix, no_second_rates, senate_crosstabs,
+            winning_simulations)
+
+
+# ============================================================================
+# WIN SCENARIO COMPUTATION AND EXPORT
+# ============================================================================
+
+def compute_and_export_win_scenarios(winning_simulations,
+                                      output_path='win_scenarios.json'):
+    """
+    For each candidate compute two scenario snapshots from their winning sims:
+
+      median_win   — 50th-percentile world across all simulations they won.
+                     Represents a "typical" winning outcome.
+
+      closest_win  — the single simulation where their margin over the runner-up
+                     was smallest.  Represents a squeaker / stress-test scenario.
+
+    Each scenario stores a full 7-candidate vote-share dict (normalised to 100)
+    so it can be dropped directly into the precinct pipeline as a baseline.
+
+    Saves win_scenarios.json and returns the output dict.
+    """
+    print("\n" + "=" * 70)
+    print("WIN SCENARIO ANALYSIS")
+    print("=" * 70)
+
+    scenarios = {}
+
+    for cand in CANDIDATES:
+        sims = winning_simulations.get(cand, [])
+
+        if not sims:
+            print(f"  {cand:<16}: 0 winning simulations — skipping")
+            scenarios[cand] = None
+            continue
+
+        print(f"  {cand:<16}: {len(sims):,} winning simulations")
+
+        # ── Median win scenario ───────────────────────────────────────────
+        # Take the per-candidate median across all winning snapshots, then
+        # re-normalise so shares sum to 100.
+        raw_medians = {c: float(np.median([s[c] for s in sims])) for c in CANDIDATES}
+        total_med   = sum(raw_medians.values())
+        median_shares = {c: round(raw_medians[c] / total_med * 100, 3)
+                         for c in CANDIDATES}
+        median_margin = median_shares[cand] - max(
+            v for c, v in median_shares.items() if c != cand
+        )
+
+        # ── Closest win scenario ──────────────────────────────────────────
+        # Find the single snapshot with the smallest winner's margin.
+        def _margin(s):
+            total = sum(s.values())
+            if total == 0:
+                return 0.0
+            normed = {c: s[c] / total * 100 for c in CANDIDATES}
+            return normed[cand] - max(v for c, v in normed.items() if c != cand)
+
+        closest_sim    = min(sims, key=_margin)
+        closest_total  = sum(closest_sim.values())
+        closest_shares = {c: round(closest_sim[c] / closest_total * 100, 3)
+                          for c in CANDIDATES}
+        closest_margin = closest_shares[cand] - max(
+            v for c, v in closest_shares.items() if c != cand
+        )
+
+        scenarios[cand] = {
+            'n_winning_sims': len(sims),
+            'median_win': {
+                'vote_shares':    median_shares,
+                'winner_margin':  round(median_margin, 3),
+            },
+            'closest_win': {
+                'vote_shares':    closest_shares,
+                'winner_margin':  round(closest_margin, 3),
+            },
+        }
+
+    # ── Print summary table ───────────────────────────────────────────────
+    print(f"\n{'Candidate':<16} {'Win Sims':>10} {'Med Win Margin':>16} "
+          f"{'Closest Win Margin':>20}")
+    print("-" * 68)
+    for cand in CANDIDATES:
+        s = scenarios.get(cand)
+        if s is None:
+            print(f"  {cand:<14} {'—':>10}")
+            continue
+        print(f"  {cand:<14} {s['n_winning_sims']:>10,} "
+              f"{s['median_win']['winner_margin']:>15.2f}% "
+              f"{s['closest_win']['winner_margin']:>19.2f}%")
+
+    output = {
+        'generated_at': datetime.now().isoformat(),
+        'n_simulations': N_SIMULATIONS,
+        'scenarios': scenarios,
+    }
+
+    with open(output_path, 'w') as f:
+        json.dump(output, f, indent=2)
+
+    print(f"\n✓ win_scenarios.json written → {output_path}")
+    return output
 
 
 # ============================================================================
@@ -876,10 +995,10 @@ def build_poll_history(all_polls, n_simulations_history=100_000):
     history = []
 
     for snap_def in snapshot_definitions:
-        as_of   = snap_def['as_of']
-        label   = snap_def['label']
+        as_of      = snap_def['as_of']
+        label      = snap_def['label']
         snap_polls = snap_def['polls']
-        trigger = snap_def['trigger_poll']
+        trigger    = snap_def['trigger_poll']
 
         print(f"\n  Building snapshot: {label}")
         print(f"    Polls included: {len(snap_polls)}")
@@ -1145,13 +1264,17 @@ if __name__ == "__main__":
     (win_probs, percentiles, all_results, wins, best_scenarios,
      scaled_crosstabs, crosstab_moes, fav_weights,
      transfer_matrix, no_second_rates,
-     senate_crosstabs) = run_monte_carlo(POLLS, N_SIMULATIONS)
+     senate_crosstabs,
+     winning_simulations) = run_monte_carlo(POLLS, N_SIMULATIONS)   # ← unpacks new value
 
     display_win_counts(wins, N_SIMULATIONS)
     display_results(win_probs, percentiles)
     print_best_scenarios(best_scenarios)
     print_crosstab_summary(scaled_crosstabs)
     create_visualization(win_probs, percentiles, all_results)
+
+    # NEW: compute median-win and closest-win scenarios, write win_scenarios.json
+    compute_and_export_win_scenarios(winning_simulations)
 
     # -----------------------------------------------------------------------
     # EXPORT — build full versioned history
@@ -1283,6 +1406,7 @@ if __name__ == "__main__":
     print(f"\nOutputs:")
     print(f"  poll_baseline.json              — versioned history + current snapshot")
     print(f"  district_win_probabilities.json — win probs for map")
+    print(f"  win_scenarios.json              — median-win + closest-win per candidate")
     print(f"  win_probabilities.png           — visualization")
     print(f"\nHistory snapshots: {len(history)}")
     for snap in history:
