@@ -699,8 +699,87 @@ for cand in CANDIDATES:
     ))
 
 n_dist_traces = len([k for k in dist_candidate_trace_indices])
-# We load clean boundary polygons rather than deriving from precinct edges,
-# which always produces jagged internal lines.
+
+# Layer 5: Turnout map
+# z = actual votes / registered voters * 100
+# Colorscale: red (0%) → green (65%+)
+# Single trace — no candidate selector needed.
+
+TURNOUT_MAX = 65.0   # colorscale ceiling (actual max is 63%)
+
+turnout_colorscale = [
+    [0.0,   'rgb(180,0,0)'],
+    [0.15,  'rgb(230,80,80)'],
+    [0.35,  'rgb(240,180,100)'],
+    [0.55,  'rgb(160,220,120)'],
+    [1.0,   'rgb(0,140,50)'],
+]
+
+def make_turnout_hover(row):
+    display    = str(row.get('display_name', '') or '').strip() or 'Unknown'
+    region     = row.get('region', '')
+    total      = int(row.get('actual_total_votes', 0) or 0)
+    registered = int(row.get('Registered Voters', 0) or 0)
+    if registered > 0:
+        pct = total / registered * 100
+        return (
+            f"<b>{display}</b><br>"
+            f"<i>{region}</i><br>"
+            f"<span style='font-family:monospace'>"
+            f"Votes cast:  {total:,}<br>"
+            f"Registered:  {registered:,}<br>"
+            f"<b>Turnout: {pct:.1f}%</b>"
+            f"</span>"
+        )
+    return f"<b>{display}</b><br><i>{region}</i><br>No registration data"
+
+if 'gdf_all' not in dir():
+    gdf_all = gdf_merged.copy().reset_index(drop=True)
+gdf_all['_turnout_id'] = range(len(gdf_all))
+
+reg_col = 'Registered Voters'
+if reg_col not in gdf_all.columns:
+    # try to pull from df via JoinField_norm
+    reg_df = df[['JoinField_norm', reg_col]].copy() if reg_col in df.columns else None
+    if reg_df is not None:
+        gdf_all = gdf_all.merge(reg_df, on='JoinField_norm', how='left')
+
+gdf_all[reg_col] = pd.to_numeric(gdf_all.get(reg_col, pd.Series(0, index=gdf_all.index)),
+                                   errors='coerce').fillna(0)
+gdf_all['_turnout_pct'] = np.where(
+    gdf_all[reg_col] > 0,
+    np.clip(gdf_all['actual_total_votes'] / gdf_all[reg_col] * 100, 0, TURNOUT_MAX),
+    np.nan
+)
+
+hover_turnout = gdf_all.apply(make_turnout_hover, axis=1)
+
+turnout_trace_idx = len(fig.data)
+fig.add_trace(go.Choroplethmapbox(
+    geojson=gdf_all.__geo_interface__,
+    locations=gdf_all['_turnout_id'],
+    z=gdf_all['_turnout_pct'],
+    zmin=0, zmax=TURNOUT_MAX,
+    colorscale=turnout_colorscale,
+    showscale=True,
+    colorbar=dict(
+        title=dict(text='Turnout %', font=dict(color='white', size=11)),
+        tickfont=dict(color='white', size=10),
+        tickvals=[0, 15, 30, 45, 60, 65],
+        ticktext=['0%', '15%', '30%', '45%', '60%', '65%+'],
+        len=0.5, thickness=14,
+        x=1.01,
+        bgcolor='rgba(0,0,0,0.4)',
+    ),
+    marker_line_width=0.4,
+    marker_line_color='rgba(255,255,255,0.3)',
+    marker_opacity=0.85,
+    text=hover_turnout,
+    hovertemplate='%{text}<extra></extra>',
+    name='Turnout',
+    featureidkey='properties._turnout_id',
+    visible=False,
+))
 
 def geom_to_lonlat(geom):
     """Polygon/MultiPolygon → lon/lat lists with None pen-lift separators."""
@@ -780,10 +859,12 @@ n_actual_traces   = len(all_winners)
 n_accuracy_traces = 2 if has_predictions else 0
 n_perf_traces_val = len(perf_candidate_trace_indices)
 n_dist_traces_val = len(dist_candidate_trace_indices)
+n_turnout_traces  = 1
 n_boundary_traces = (len(fig.data) - n_actual_traces - n_accuracy_traces
-                     - n_perf_traces_val - n_dist_traces_val)
+                     - n_perf_traces_val - n_dist_traces_val - n_turnout_traces)
 
-def make_visibility(show_actual, show_accuracy, perf_cand=None, dist_cand=None):
+def make_visibility(show_actual, show_accuracy, perf_cand=None,
+                    dist_cand=None, show_turnout=False):
     total = len(fig.data)
     vis = [False] * total
     for i in range(n_actual_traces):
@@ -800,6 +881,7 @@ def make_visibility(show_actual, show_accuracy, perf_cand=None, dist_cand=None):
             idx = dist_candidate_trace_indices.get(key)
             if idx is not None:
                 vis[idx] = True
+    vis[turnout_trace_idx] = show_turnout
     for i in range(total - n_boundary_traces, total):
         vis[i] = True
     return vis
@@ -840,6 +922,13 @@ if n_dist_traces_val > 0:
                'updatemenus[2].visible': True,
                'updatemenus[2].active': 0}],
     ))
+buttons_layer.append(dict(
+    label='Turnout',
+    method='update',
+    args=[{'visible': make_visibility(False, False, show_turnout=True)},
+          {'updatemenus[1].visible': False,
+           'updatemenus[2].visible': False}],
+))
 
 # ---- vs Model candidate dropdown ----
 perf_dropdown_buttons = []
@@ -901,6 +990,8 @@ fig.update_layout(
     showlegend=True,
     legend=dict(title='Actual Winner', yanchor='top', y=0.99,
                 xanchor='left', x=0.01, bgcolor='rgba(255,255,255,0.9)'),
+    modebar=dict(orientation='v', bgcolor='rgba(255,255,255,0.7)',
+                 color='#333', activecolor='#667eea'),
     updatemenus=updatemenus,
 )
 
@@ -1061,7 +1152,15 @@ stats_html += "  </div>\n</div>"
 # ============================================================================
 
 print(f"\nWriting {OUTPUT_HTML}...")
-plotly_html = fig.to_html(include_plotlyjs='cdn', div_id='results-map-div')
+plotly_html = fig.to_html(
+    include_plotlyjs='cdn',
+    div_id='results-map-div',
+    config={
+        'displaylogo': False,
+        'modeBarButtonsToRemove': ['lasso2d', 'select2d'],
+        'toImageButtonOptions': {'format': 'png', 'filename': 'IL09_results'},
+    }
+)
 
 full_html = f"""<!DOCTYPE html>
 <html>
