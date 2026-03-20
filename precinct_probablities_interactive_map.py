@@ -1,34 +1,29 @@
+"""
+IL-09 Democratic Primary — Actual Results Map
+Reads precinct-level actual vote totals from IL_09_precinct_probabilities.csv
+and produces an interactive HTML map showing:
+  1. Actual results (winner per precinct, colored by candidate)
+  2. Predicted vs Actual accuracy layer (correct/incorrect prediction overlay)
+"""
+
 import geopandas as gpd
 import pandas as pd
-import json
 import plotly.graph_objects as go
-from shapely.ops import unary_union
-from datetime import datetime
+import numpy as np
 
 # ============================================================================
 # CONFIGURATION
 # ============================================================================
 
-SHAPEFILE_PATH = 'data/shapefile/IL24/IL24.shp'
+SHAPEFILE_PATH               = 'data/shapefile/IL24/IL24.shp'
 CONGRESSIONAL_DISTRICTS_PATH = 'data/shapefile/congressional_districts.shp'
-PRECINCT_CSV = 'data/csv_data/expectations/IL_09_precinct_probabilities.csv'
-DISTRICT_PROBS_JSON = 'district_win_probabilities.json'
-POLL_BASELINE_FILE = 'poll_baseline.json'
-VOTES_CSV = 'data/csv_data/votes.csv'            # Region × date cumulative vote totals
-REGIONAL_FORECAST_FILE = 'regional_vote_forecast.json'  # fallback if votes.csv absent
-OUTPUT_HTML = 'IL09_precinct_map.html'
+CHICAGO_BOUNDARY_PATH        = 'data/shapefile/Chicago/Chicago.shp'
+EVANSTON_BOUNDARY_PATH       = 'data/shapefile/Evanston/Evanston.shp'
+PRECINCT_CSV                 = 'data/csv_data/expectations/IL_09_precinct_probabilities.csv'
+OUTPUT_HTML                  = 'IL09_actual_results_map.html'
 
 CANDIDATES = ['Fine', 'Biss', 'Abughazaleh', 'Simmons', 'Amiwala', 'Andrew', 'Huynh']
 
-# Map votes.csv row labels → model region keys used in regional_vote_forecast.json
-VOTES_CSV_REGION_MAP = {
-    'Cook County':      'Suburban Cook',
-    'City of Chicago':  'Chicago',
-    'Lake County':      'Lake County',
-    'McHenry County':   'McHenry County',
-}
-
-# Color mapping
 COLORS = {
     'Fine':        'green',
     'Abughazaleh': 'orange',
@@ -37,317 +32,201 @@ COLORS = {
     'Simmons':     'deeppink',
     'Andrew':      'red',
     'Huynh':       'gray',
+    'Other':       '#999999',
 }
 
+# Exact CSV column names → model candidate
+MODELED_RESULT_COLS = {
+    'Daniel Biss':     'Biss',
+    'Mike Simmons':    'Simmons',
+    'Bushra Amiwala':  'Amiwala',
+    'Laura Fine':      'Fine',
+    'Phil Andrew':     'Andrew',
+    'Kat Abughazaleh': 'Abughazaleh',
+    'Hoan Huynh':      'Huynh',
+}
+
+# Summed into "Other"
+OTHER_RESULT_COLS = [
+    'Justin Ford',
+    'Patricia A. Brown',
+    'Jeff Cohen',
+    'Nick Pyati',
+    'Sam Polan',
+    'Bethany Johnson',
+    'Howard Rosenblum',
+    'Mark Arnold Fredrickson',
+]
+
+TOTAL_VOTES_COL = 'Total Votes'
 
 # ============================================================================
-# HELPER FUNCTIONS
+# STEP 1: LOAD CSV AND BUILD DISPLAY NAMES
 # ============================================================================
 
-def sort_candidates_by_prob_then_vote(row):
-    return sorted(
-        [{'candidate': c, 'win_prob': row[f'win_prob_{c}'], 'median_pct': row[f'median_pct_{c}']}
-         for c in CANDIDATES],
-        key=lambda x: (x['win_prob'], x['median_pct']),
-        reverse=True
+print("Loading precinct CSV...")
+df = pd.read_csv(PRECINCT_CSV)
+print(f"  {len(df)} precincts, {len(df.columns)} columns")
+
+missing_modeled = [c for c in MODELED_RESULT_COLS if c not in df.columns]
+if missing_modeled:
+    print(f"  WARNING: Missing modeled result columns: {missing_modeled}")
+
+# Build a reliable display name from JoinField / JoinFieldAlt.
+# The precinct_name column in the CSV is misaligned (offset from the data rows)
+# so we derive names directly from the join keys instead.
+def build_display_name(row):
+    jf  = str(row.get('JoinField', '') or '').strip()
+    alt = str(row.get('JoinFieldAlt', '') or '').strip()
+
+    # COOK:numeric → use JoinFieldAlt which has the readable name, strip prefix
+    if jf.upper().startswith('COOK:') and jf.split(':')[1].strip().isdigit():
+        if alt and ':' in alt:
+            return alt.split(':', 1)[1].strip().title()
+        return jf  # fallback
+
+    # CITY OF CHICAGO:WARD XX PRECINCT YY → "Ward XX Precinct YY"
+    if ':' in jf:
+        parts = jf.split(':', 1)
+        return parts[1].strip().title()
+
+    return jf.title()
+
+df['display_name'] = df.apply(build_display_name, axis=1)
+df['JoinField_norm'] = df['JoinField'].str.upper()
+print(f"  Sample display names: {df['display_name'].head(3).tolist()}")
+
+# ============================================================================
+# STEP 2: COMPUTE ACTUAL VOTES AND WINNER PER PRECINCT
+# ============================================================================
+
+all_result_cols = list(MODELED_RESULT_COLS.keys()) + OTHER_RESULT_COLS
+for col in all_result_cols:
+    if col in df.columns:
+        df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
+
+for csv_col, cand in MODELED_RESULT_COLS.items():
+    df[f'actual_votes_{cand}'] = df[csv_col] if csv_col in df.columns else 0
+
+present_other = [c for c in OTHER_RESULT_COLS if c in df.columns]
+df['actual_votes_Other'] = df[present_other].sum(axis=1) if present_other else 0
+
+if TOTAL_VOTES_COL in df.columns:
+    df['actual_total_votes'] = pd.to_numeric(
+        df[TOTAL_VOTES_COL], errors='coerce').fillna(0)
+else:
+    df['actual_total_votes'] = (
+        df[[f'actual_votes_{c}' for c in CANDIDATES] + ['actual_votes_Other']].sum(axis=1)
     )
 
+for cand in CANDIDATES:
+    df[f'actual_pct_{cand}'] = np.where(
+        df['actual_total_votes'] > 0,
+        df[f'actual_votes_{cand}'] / df['actual_total_votes'] * 100,
+        0.0,
+    )
+df['actual_pct_Other'] = np.where(
+    df['actual_total_votes'] > 0,
+    df['actual_votes_Other'] / df['actual_total_votes'] * 100,
+    0.0,
+)
 
-def get_sorted_probabilities(row):
-    ranked = sort_candidates_by_prob_then_vote(row)
-    return [(r['candidate'], r['win_prob'], r['median_pct']) for r in ranked]
+winner_vote_cols = {f'actual_votes_{c}': c for c in CANDIDATES}
+winner_vote_cols['actual_votes_Other'] = 'Other'
 
-
-def calculate_competitiveness(row):
-    probs = sorted([row[f'win_prob_{c}'] for c in CANDIDATES], reverse=True)
-    return probs[0] - probs[1]
-
-
-def assign_region(row):
-    if row.get('in_chicago', 0) == 1:
-        return 'Chicago'
-    elif row.get('in_evanston', 0) == 1:
-        return 'Evanston'
-    elif row.get('in_lake', 0) == 1:
-        return 'Lake County'
-    elif row.get('in_mchenry', 0) == 1:
-        return 'McHenry County'
-    elif row.get('in_cook', 0) == 1:
-        return 'Suburban Cook (not including Evanston)'
-    else:
+def get_actual_winner(row):
+    best = max(winner_vote_cols.keys(), key=lambda c: row.get(c, 0))
+    if row.get(best, 0) == 0:
         return 'Other'
+    return winner_vote_cols[best]
 
+df['actual_winner'] = df.apply(get_actual_winner, axis=1)
 
-# ============================================================================
-# BANKED VOTE ENGINE
-# Uses votes.csv (cumulative) + poll_baseline.json history to distribute
-# each batch of votes using the polling baseline closest in time.
-# ============================================================================
+print(f"\nActual winner distribution:")
+for cand, count in df['actual_winner'].value_counts().items():
+    print(f"  {cand:<20}: {count} precincts")
 
-def parse_votes_csv_date(col_str):
-    """
-    Parse date strings like '17-Feb', '19-Feb', '26-Feb' into datetime objects.
-    Assumes year 2026.
-    """
-    try:
-        return datetime.strptime(col_str.strip() + '-2026', '%d-%b-%Y')
-    except ValueError:
-        return None
-
-
-def get_snapshot_for_date(history, target_date):
-    """
-    Return the most recent history snapshot with as_of <= target_date.
-    Falls back to the earliest snapshot if all are after target_date.
-
-    history: list of dicts each with 'as_of' key (YYYY-MM-DD string)
-    target_date: datetime object
-    """
-    best = None
-    best_date = None
-
-    for snap in history:
-        snap_date = datetime.strptime(snap['as_of'], '%Y-%m-%d')
-        if snap_date <= target_date:
-            if best_date is None or snap_date > best_date:
-                best = snap
-                best_date = snap_date
-
-    # If no snapshot is on or before target_date, use the earliest one
-    if best is None and history:
-        best = min(history, key=lambda s: s['as_of'])
-
-    return best
-
-
-def compute_banked_votes(poll_data, votes_csv_path, regional_forecast_data):
-    """
-    Reads votes.csv and distributes each batch of newly-cast votes using the
-    polling baseline from the closest-in-time history snapshot.
-
-    Logic:
-    1. Parse votes.csv: rows=regions, columns=dates (cumulative)
-    2. For each date column, compute the new batch = cumulative[date] - cumulative[prev_date]
-    3. Find the poll_baseline.json history snapshot with as_of <= batch_date
-    4. Use that snapshot's regional vote shares (from regional_forecast_data) and
-       district-level baseline to estimate candidate distribution within each region
-    5. Accumulate across all batches and regions
-
-    Returns:
-        banked_by_region: { region_key: { 'cast': int, 'by_candidate': {cand: int} } }
-        district_banked:  { cand: int }
-        batch_log:        list of dicts for display/debugging
-    """
-    # --- Load history from poll_baseline.json ---
-    history = poll_data.get('history', [])
-    if not history:
-        print("  ⚠ No history snapshots in poll_baseline.json — using current baseline for all batches")
-        # Wrap current snapshot as a single-entry history
-        current = poll_data.get('current', poll_data)
-        history = [{'as_of': current.get('as_of', '2026-01-01'), 'baseline': current.get('baseline', {})}]
-
-    # --- Load votes.csv ---
-    try:
-        df_votes = pd.read_csv(votes_csv_path, index_col=0)
-        print(f"  ✓ Loaded votes.csv: {df_votes.shape[0]} regions × {df_votes.shape[1]} dates")
-    except FileNotFoundError:
-        print(f"  ⚠ {votes_csv_path} not found — banked vote section will be skipped")
-        return None, None, None
-
-    # Parse date columns
-    date_cols = []
-    for col in df_votes.columns:
-        dt = parse_votes_csv_date(col)
-        if dt is not None:
-            date_cols.append((col, dt))
-        else:
-            print(f"  ⚠ Could not parse date column: '{col}' — skipping")
-
-    if not date_cols:
-        print("  ⚠ No parseable date columns in votes.csv")
-        return None, None, None
-
-    date_cols.sort(key=lambda x: x[1])  # sort chronologically
-
-    # --- Accumulate banked votes ---
-    banked_by_region = {r: {'cast': 0, 'by_candidate': {c: 0 for c in CANDIDATES}}
-                        for r in VOTES_CSV_REGION_MAP.values()}
-    district_banked = {c: 0 for c in CANDIDATES}
-    batch_log = []
-
-    # Previous cumulative totals per region (for computing incremental batches)
-    prev_cumulative = {row_label: 0 for row_label in df_votes.index}
-
-    for col_str, batch_date in date_cols:
-        # Find the appropriate history snapshot for this batch
-        snap = get_snapshot_for_date(history, batch_date)
-        snap_baseline = snap.get('baseline', {}) if snap else {}
-        snap_as_of = snap.get('as_of', 'unknown') if snap else 'unknown'
-
-        batch_total = 0
-        batch_by_region = {}
-
-        for row_label in df_votes.index:
-            model_region = VOTES_CSV_REGION_MAP.get(str(row_label).strip())
-            if model_region is None:
-                continue  # skip Total row or unrecognized regions
-
-            cumul = df_votes.loc[row_label, col_str]
-            try:
-                cumul = int(cumul)
-            except (ValueError, TypeError):
-                continue
-
-            new_votes = max(0, cumul - prev_cumulative.get(row_label, 0))
-            prev_cumulative[row_label] = cumul
-            batch_total += new_votes
-
-            if new_votes == 0:
-                batch_by_region[model_region] = {'new_votes': 0, 'by_candidate': {c: 0 for c in CANDIDATES}}
-                continue
-
-            # Distribute new_votes using regional forecast shares adjusted by
-            # the snapshot baseline. If we have regional forecast data, use its
-            # vote_shares for this region; otherwise fall back to district baseline.
-            rdata = regional_forecast_data.get(model_region, {}) if regional_forecast_data else {}
-            regional_shares = rdata.get('vote_shares', {})
-
-            # Build distribution weights:
-            # - If regional_shares available, use them (they encode geographic variation)
-            # - Rescale to match the snapshot's district-level baseline ratios
-            dist_weights = {}
-            if regional_shares and snap_baseline:
-                # Scale regional shares by snapshot baseline (relative to a reference baseline)
-                # This adjusts for polling movement while preserving geographic patterns
-                total_dist = sum(snap_baseline.get(c, 0) for c in CANDIDATES)
-                total_reg  = sum(regional_shares.get(c, 0) for c in CANDIDATES)
-
-                for cand in CANDIDATES:
-                    reg_share  = regional_shares.get(cand, 0)
-                    dist_share = snap_baseline.get(cand, 0)
-
-                    if total_reg > 0 and total_dist > 0:
-                        # Blend: 60% regional pattern, 40% snapshot baseline
-                        blended = 0.6 * (reg_share / total_reg) + 0.4 * (dist_share / total_dist)
-                    elif total_dist > 0:
-                        blended = dist_share / total_dist
-                    else:
-                        blended = 1.0 / len(CANDIDATES)
-
-                    dist_weights[cand] = max(blended, 0)
-
-            elif snap_baseline:
-                # No regional data — use snapshot baseline directly
-                total_dist = sum(snap_baseline.get(c, 0) for c in CANDIDATES)
-                for cand in CANDIDATES:
-                    dist_weights[cand] = (snap_baseline.get(cand, 0) / total_dist
-                                          if total_dist > 0 else 1.0 / len(CANDIDATES))
-            else:
-                # No data at all — uniform
-                for cand in CANDIDATES:
-                    dist_weights[cand] = 1.0 / len(CANDIDATES)
-
-            # Normalize weights
-            total_w = sum(dist_weights.values())
-            if total_w > 0:
-                dist_weights = {c: w / total_w for c, w in dist_weights.items()}
-
-            # Allocate votes
-            cand_votes = {c: round(new_votes * dist_weights[c]) for c in CANDIDATES}
-            # Correct rounding error on largest candidate
-            diff = new_votes - sum(cand_votes.values())
-            if diff != 0:
-                top_cand = max(CANDIDATES, key=lambda c: dist_weights[c])
-                cand_votes[top_cand] += diff
-
-            # Accumulate
-            banked_by_region[model_region]['cast'] += new_votes
-            for cand in CANDIDATES:
-                banked_by_region[model_region]['by_candidate'][cand] += cand_votes[cand]
-                district_banked[cand] += cand_votes[cand]
-
-            batch_by_region[model_region] = {'new_votes': new_votes, 'by_candidate': cand_votes}
-
-        batch_log.append({
-            'date': col_str,
-            'date_parsed': batch_date.strftime('%Y-%m-%d'),
-            'snapshot_used': snap_as_of,
-            'new_votes': batch_total,
-            'cumulative': sum(prev_cumulative.values()),
-            'by_region': batch_by_region,
-        })
-
-        print(f"  {col_str}: +{batch_total:,} votes → using snapshot as_of {snap_as_of}")
-
-    return banked_by_region, district_banked, batch_log
-
+total_district_votes = int(df['actual_total_votes'].sum())
+print(f"\nDistrict-wide votes:")
+for cand in CANDIDATES:
+    v   = int(df[f'actual_votes_{cand}'].sum())
+    pct = v / total_district_votes * 100 if total_district_votes > 0 else 0
+    print(f"  {cand:<20}: {v:>7,}  ({pct:.1f}%)")
+other_v = int(df['actual_votes_Other'].sum())
+print(f"  {'Other':<20}: {other_v:>7,}  ({other_v/total_district_votes*100:.1f}%)")
+print(f"  {'TOTAL':<20}: {total_district_votes:>7,}")
 
 # ============================================================================
-# LOAD DATA
+# STEP 3: PREDICTED WINNER
+# Reads from _simplified.csv which win_probability_precinct.py generates.
+# That file has JoinField correctly aligned with win_prob_/median_pct_ columns.
+# The main CSV has those columns in a different sort order and cannot be used.
+# If the simplified CSV is absent, skip the accuracy layer entirely.
+# To regenerate: run win_probability_precinct.py first.
 # ============================================================================
 
-print("Loading data...")
+SIMPLIFIED_CSV = 'data/csv_data/expectations/IL_09_precinct_probabilities_simplified.csv'
 
-gdf = gpd.read_file(SHAPEFILE_PATH)
-print(f"✓ Loaded {len(gdf)} precincts from shapefile")
-
-gdf_congress = gpd.read_file(CONGRESSIONAL_DISTRICTS_PATH)
-print(f"✓ Loaded {len(gdf_congress)} congressional districts")
-
-df_probs = pd.read_csv(PRECINCT_CSV)
-print(f"✓ Loaded {len(df_probs)} precincts from CSV")
-
-with open(DISTRICT_PROBS_JSON, 'r') as f:
-    district_data = json.load(f)
-    district_win_probs = district_data['win_probabilities']
-    district_median    = district_data['median_results']
-    district_sim_wins  = district_data.get('simulation_wins', {})
-print("✓ Loaded district-wide probabilities")
-
-# Load versioned poll_baseline.json (new structure under 'current')
-with open(POLL_BASELINE_FILE, 'r') as f:
-    poll_data = json.load(f)
-
-if 'current' in poll_data:
-    baseline_avg = poll_data['current']['baseline']
-    print("✓ Loaded baseline poll average (versioned structure)")
-else:
-    baseline_avg = poll_data.get('baseline', {})
-    print("✓ Loaded baseline poll average (legacy structure)")
-
-# Load regional forecast (used as geographic distribution anchor for banked votes)
+has_predictions = False
 try:
-    with open(REGIONAL_FORECAST_FILE, 'r') as f:
-        regional_forecast = json.load(f)
-    regional_forecast_data = regional_forecast.get('regions', {})
-    print(f"✓ Loaded regional vote forecast")
+    df_pred = pd.read_csv(SIMPLIFIED_CSV,
+                          usecols=['JoinField'] +
+                                  [f'median_pct_{c}' for c in CANDIDATES])
+
+    # Detect fraction vs percentage storage
+    sample_max = df_pred[f'median_pct_{CANDIDATES[0]}'].max()
+    if sample_max < 2.0:
+        for c in CANDIDATES:
+            df_pred[f'median_pct_{c}'] *= 100
+
+    df_pred['JoinField_norm'] = df_pred['JoinField'].str.upper()
+    df_pred['predicted_winner'] = (
+        df_pred[[f'median_pct_{c}' for c in CANDIDATES]]
+        .idxmax(axis=1)
+        .str.replace('median_pct_', '', regex=False)
+    )
+
+    # Rename median_pct cols to predicted_pct so they don't clash with
+    # the misaligned median_pct cols already in the main CSV
+    rename_map = {f'median_pct_{c}': f'predicted_pct_{c}' for c in CANDIDATES}
+    df_pred = df_pred.rename(columns=rename_map)
+
+    merge_cols = ['JoinField_norm', 'predicted_winner'] + \
+                 [f'predicted_pct_{c}' for c in CANDIDATES]
+
+    df = df.merge(df_pred[merge_cols], on='JoinField_norm', how='left')
+    df['prediction_correct'] = df['predicted_winner'] == df['actual_winner']
+
+    n_matched = df['predicted_winner'].notna().sum()
+    overall_acc = df.loc[df['predicted_winner'].notna(), 'prediction_correct'].mean() * 100
+    has_predictions = True
+    print(f"\nPrediction accuracy: {int(df['prediction_correct'].sum())}/{n_matched} "
+          f"precincts ({overall_acc:.1f}%)")
+
 except FileNotFoundError:
-    regional_forecast_data = {}
-    print(f"⚠ {REGIONAL_FORECAST_FILE} not found — banked votes will use district baseline only")
+    print(f"\n  Skipping prediction accuracy — {SIMPLIFIED_CSV} not found.")
+    print(f"  Run win_probability_precinct.py to generate it.")
+except KeyError as e:
+    print(f"\n  Skipping prediction accuracy — missing column {e} in simplified CSV.")
 
 # ============================================================================
-# EXTRACT IL-09 BOUNDARY AND CLIP PRECINCTS
+# STEP 4: LOAD SHAPEFILE AND JOIN TO IL-09
 # ============================================================================
 
-print("\nExtracting IL-09 congressional district boundary...")
+print("\nLoading shapefiles...")
+gdf          = gpd.read_file(SHAPEFILE_PATH)
+gdf_congress = gpd.read_file(CONGRESSIONAL_DISTRICTS_PATH)
 
-if gdf_congress.crs is None:
-    gdf_congress = gdf_congress.set_crs(epsg=4326)
-if gdf.crs is None:
-    gdf = gdf.set_crs(epsg=4326)
+for g in [gdf, gdf_congress]:
+    if g.crs is None:
+        g.set_crs(epsg=4326, inplace=True)
 if gdf_congress.crs != gdf.crs:
     gdf_congress = gdf_congress.to_crs(gdf.crs)
 
-district_col = None
-for col in ['DISTRICT', 'CD', 'CONG_DIST', 'DIST_NUM', 'NAME', 'NAMELSAD']:
-    if col in gdf_congress.columns:
-        district_col = col
-        break
-
-if district_col is None:
-    print("  ERROR: Could not identify district number column")
-    exit(1)
-
+district_col = next(
+    (c for c in ['DISTRICT', 'CD', 'CONG_DIST', 'DIST_NUM', 'NAME', 'NAMELSAD']
+     if c in gdf_congress.columns), None
+)
 il09_mask = (
     (gdf_congress[district_col] == '09') |
     (gdf_congress[district_col] == '9')  |
@@ -355,626 +234,757 @@ il09_mask = (
     (gdf_congress[district_col].astype(str).str.contains('09', na=False)) |
     (gdf_congress[district_col].astype(str).str.contains('9', na=False))
 )
-
-if il09_mask.sum() == 0:
-    print("  ERROR: Could not find district 9")
-    exit(1)
-
 il09_geom = gdf_congress[il09_mask].geometry.unary_union
 gdf['geometry'] = gdf.geometry.intersection(il09_geom)
 gdf = gdf[~gdf.geometry.is_empty].copy()
-print(f"✓ Clipped {len(gdf)} precincts to IL-09 boundaries")
+print(f"  Clipped to {len(gdf)} precincts in IL-09")
 
-# ============================================================================
-# MULTI-STRATEGY JOIN
-# ============================================================================
+# Join strategy: pull ONLY geometry from the shapefile, then merge onto the
+# full CSV dataframe. This avoids all column naming conflicts entirely since
+# the shapefile contributes nothing except geometry and JoinField_norm.
+gdf['JoinField_norm'] = gdf['JoinField'].str.upper()
+df['JoinField_norm']  = df['JoinField'].str.upper()
 
-print("Joining precinct shapefile to CSV data...")
+# Geometry-only frame — just the key and the shapes
+geom_df = gdf[['JoinField_norm', 'geometry']].copy()
 
-gdf['JoinField_norm']      = gdf['JoinField'].str.upper()
-df_probs['JoinField_norm'] = df_probs['JoinField'].str.upper()
-df_probs['JoinField2_norm']   = df_probs['JoinField2'].str.upper()
-df_probs['JoinFieldAlt_norm'] = df_probs['JoinFieldAlt'].str.upper()
+# Primary join: CSV is the left frame, geometry joins onto it
+gdf_merged = df.merge(geom_df, on='JoinField_norm', how='inner')
 
-gdf_merged = gdf.merge(df_probs, on='JoinField_norm', how='inner',
-                        suffixes=('_shape', '_csv'))
-print(f"  Strategy 1 (JoinField): {len(gdf_merged)} matches")
-
-for strat_num, right_col in [(2, 'JoinField2_norm'), (3, 'JoinFieldAlt_norm')]:
-    unmatched_shape = gdf[~gdf['JoinField_norm'].isin(gdf_merged['JoinField_norm'])]
-    unmatched_csv   = df_probs[~df_probs['JoinField_norm'].isin(gdf_merged['JoinField_norm'])]
-    if len(unmatched_shape) > 0 and len(unmatched_csv) > 0:
-        extra = unmatched_shape.merge(unmatched_csv, left_on='JoinField_norm',
-                                       right_on=right_col, how='inner',
-                                       suffixes=('_shape', '_csv'))
+# Secondary join via JoinField2 for anything still unmatched
+if 'JoinField2' in df.columns:
+    df['JoinField2_norm'] = df['JoinField2'].str.upper()
+    matched_norms  = set(gdf_merged['JoinField_norm'])
+    unmatched_csv  = df[~df['JoinField_norm'].isin(matched_norms)].copy()
+    unmatched_geom = geom_df[~geom_df['JoinField_norm'].isin(matched_norms)].copy()
+    if len(unmatched_csv) > 0 and len(unmatched_geom) > 0:
+        extra = unmatched_csv.merge(
+            unmatched_geom.rename(columns={'JoinField_norm': 'JoinField2_norm'}),
+            on='JoinField2_norm', how='inner'
+        )
         if len(extra) > 0:
-            print(f"  Strategy {strat_num} ({right_col}): {len(extra)} additional matches")
+            print(f"  Secondary join matched {len(extra)} additional precincts")
             gdf_merged = pd.concat([gdf_merged, extra], ignore_index=True)
-
-print(f"✓ Total merged: {len(gdf_merged)} precincts")
 
 gdf_merged = gpd.GeoDataFrame(gdf_merged, geometry='geometry')
 if gdf_merged.crs is None:
     gdf_merged = gdf_merged.set_crs(epsg=4326)
-elif gdf_merged.crs != 'EPSG:4326':
+elif gdf_merged.crs.to_epsg() != 4326:
     gdf_merged = gdf_merged.to_crs(epsg=4326)
 
 invalid = ~gdf_merged.geometry.is_valid
 if invalid.sum() > 0:
     gdf_merged.loc[invalid, 'geometry'] = gdf_merged.loc[invalid, 'geometry'].buffer(0)
-
-empty = gdf_merged.geometry.is_empty
-if empty.sum() > 0:
-    gdf_merged = gdf_merged[~empty]
-
-print(f"✓ Final dataset: {len(gdf_merged)} precincts ready for mapping")
+gdf_merged = gdf_merged[~gdf_merged.geometry.is_empty]
+print(f"  Joined: {len(gdf_merged)} precincts with geometry + results")
 
 # ============================================================================
-# PRECINCT WINNERS AND REGIONS
+# STEP 5: REGION LABELS AND BOUNDARY OUTLINES
 # ============================================================================
 
-gdf_merged['winner'] = gdf_merged.apply(
-    lambda row: sort_candidates_by_prob_then_vote(row)[0]['candidate'], axis=1)
-gdf_merged['winner_color'] = gdf_merged['winner'].map(COLORS)
-gdf_merged['competitiveness_margin'] = gdf_merged.apply(calculate_competitiveness, axis=1)
+def assign_region_from_joinfield(jf):
+    """
+    Derive region purely from JoinField — the in_chicago / in_evanston etc.
+    flag columns in the CSV are misaligned from the data rows and cannot be
+    trusted. JoinField is the join key so it is always correctly aligned.
 
-df_probs['region']  = df_probs.apply(assign_region, axis=1)
-gdf_merged['region'] = gdf_merged.apply(assign_region, axis=1)
+    Rules (all case-insensitive):
+      CITY OF CHICAGO:*          → Chicago
+      COOK:75xxxxx (7501001-7509005) → Evanston
+      COOK:8xxxxxx / COOK:9xxxxxx    → Suburban Cook
+      LAKE:*                     → Lake County
+      MCHENRY:*                  → McHenry County
+    """
+    jf = str(jf).strip().upper()
+    if jf.startswith('CITY OF CHICAGO:'):
+        return 'Chicago'
+    if jf.startswith('COOK:'):
+        suffix = jf.split(':', 1)[1].strip()
+        if suffix.isdigit():
+            n = int(suffix)
+            if 7501001 <= n <= 7509999:
+                return 'Evanston'
+            return 'Suburban Cook'
+        return 'Suburban Cook'
+    if jf.startswith('LAKE:'):
+        return 'Lake County'
+    if jf.startswith('MCHENRY:'):
+        return 'McHenry County'
+    return 'Other'
 
-# ============================================================================
-# REGIONAL STATISTICS
-# ============================================================================
+gdf_merged['region'] = gdf_merged['JoinField'].apply(assign_region_from_joinfield)
+print(f"\n  Region distribution:")
+for region, count in gdf_merged['region'].value_counts().items():
+    print(f"    {region:<20}: {count}")
 
-regions = ['Chicago', 'Evanston', 'Suburban Cook (not including Evanston)',
-           'Lake County', 'McHenry County']
-regional_stats = {}
-total_turnout = df_probs['estimated_turnout'].sum()
-
-for region in regions:
-    region_df = df_probs[df_probs['region'] == region]
-    if len(region_df) == 0:
-        continue
-    region_turnout = region_df['estimated_turnout'].sum()
-    candidate_shares = {
-        cand: ((region_df[f'median_pct_{cand}'] * region_df['estimated_turnout']).sum()
-               / region_turnout if region_turnout > 0 else 0)
-        for cand in CANDIDATES
-    }
-    regional_stats[region] = {
-        'turnout_pct':      (region_turnout / total_turnout) * 100,
-        'candidate_shares': candidate_shares,
-        'num_precincts':    len(region_df),
-    }
-
-# ============================================================================
-# REGIONAL BOUNDARY OUTLINES
-# ============================================================================
-
+regions = ['Chicago', 'Evanston', 'Suburban Cook', 'Lake County', 'McHenry County']
 regional_boundaries = {}
 for region in regions:
-    region_precincts = gdf_merged[gdf_merged['region'] == region]
-    if len(region_precincts) > 0:
-        regional_boundaries[region] = gpd.GeoDataFrame(
-            {'region': [region]},
-            geometry=[region_precincts.geometry.unary_union],
-            crs=gdf_merged.crs
-        )
-
-competitive_precincts = gdf_merged.nsmallest(10, 'competitiveness_margin')
+    mask = gdf_merged['region'] == region
+    if mask.sum() > 0:
+        regional_boundaries[region] = gdf_merged[mask].geometry.unary_union
 
 # ============================================================================
-# HOVER TEXT
+# STEP 6: HOVER TEXT
+# Use display_name built from JoinField/JoinFieldAlt (reliable, not precinct_name
+# which is misaligned in the CSV).
 # ============================================================================
 
-def create_hover_text(row):
-    region = row.get('region', 'Unknown')
-    precinct_name = row.get('precinct_name',
-                             row.get('JoinField_csv', row.get('JoinField_shape', 'Unknown')))
-    ranked = sort_candidates_by_prob_then_vote(row)
-    winner = ranked[0]['candidate']
-    margin = ranked[0]['median_pct'] - (ranked[1]['median_pct'] if len(ranked) > 1 else 0)
-    turnout = row.get('estimated_turnout', 0)
+def make_hover(row):
+    winner   = row.get('actual_winner', 'Unknown')
+    total    = int(row.get('actual_total_votes', 0))
+    region   = row.get('region', '')
+
+    precinct = str(row.get('display_name', '') or '').strip()
+    if not precinct or precinct.lower() in ('nan', 'none', ''):
+        precinct = 'Unknown'
+
+    cand_data = []
+    for cand in CANDIDATES:
+        votes = int(row.get(f'actual_votes_{cand}', 0))
+        pct   = row.get(f'actual_pct_{cand}', 0)
+        if votes > 0:
+            cand_data.append((cand, votes, pct))
+    other_v = int(row.get('actual_votes_Other', 0))
+    if other_v > 0:
+        cand_data.append(('Other', other_v, row.get('actual_pct_Other', 0)))
+    cand_data.sort(key=lambda x: -x[1])
+
+    # Winning margin
+    margin_votes = margin_pct = None
+    if len(cand_data) >= 2:
+        margin_votes = cand_data[0][1] - cand_data[1][1]
+        margin_pct   = cand_data[0][2] - cand_data[1][2]
+
+    # Turnout
+    registered = int(row.get('Registered Voters', 0) or 0)
+    turnout_pct = (total / registered * 100) if registered > 0 else None
 
     lines = [
-        f"<b>Region: {region}</b><br>",
-        f"<b>Precinct: {precinct_name}</b><br>",
-        "<span style='font-family: monospace'>",
-        "Candidate        Win%    Vote%<br>",
-        "-------------------------------<br>",
+        f"<b>{precinct}</b><br>",
+        f"<i>{region}</i><br>",
+        "<span style='font-family:monospace'>",
+        "Candidate         Votes    Pct<br>",
+        "--------------------------------<br>",
     ]
-    for r in ranked:
-        lines.append(f"{r['candidate']:<14} {r['win_prob']*100:>5.1f}%  {r['median_pct']:>6.1f}%<br>")
+    for cand, votes, pct in cand_data:
+        marker = '★ ' if cand == winner else '  '
+        lines.append(f"{marker}{cand:<14} {votes:>5}  {pct:>5.1f}%<br>")
     lines += [
-        "-------------------------------<br>",
-        f"<b>Expected Winner: {winner}</b><br>",
-        f"<b>Margin: {margin:>6.1f} pts</b><br>",
-        f"<b>Expected Turnout: {int(turnout):,}</b><br>",
-        "</span>",
+        "--------------------------------<br>",
+        f"<b>Total Votes: {total:,}</b><br>",
     ]
+
+    # Margin line
+    if margin_votes is not None and winner not in ('Unknown', 'Other'):
+        lines.append(
+            f"<b>{winner} +{margin_votes:,} votes  (+{margin_pct:.1f}%)</b><br>"
+        )
+
+    # Turnout line
+    if turnout_pct is not None:
+        lines.append(
+            f"Turnout: {total:,} / {registered:,} ({turnout_pct:.1f}%)<br>"
+        )
+
+    if has_predictions:
+        pred    = row.get('predicted_winner', '?')
+        correct = row.get('prediction_correct', False)
+        symbol  = '✓' if correct else '✗'
+        lines.append(f"<b>Model predicted: {pred} {symbol}</b><br>")
+    lines.append("</span>")
     return "".join(lines)
 
-gdf_merged['hover_text'] = gdf_merged.apply(create_hover_text, axis=1)
+gdf_merged['hover_text'] = gdf_merged.apply(make_hover, axis=1)
 
 # ============================================================================
-# BUILD PLOTLY MAP
+# STEP 7: BUILD PLOTLY MAP
 # ============================================================================
 
-print("Creating interactive map...")
+print("\nBuilding Plotly map...")
 fig = go.Figure()
 
-for cand in CANDIDATES:
-    mask = gdf_merged['winner'] == cand
-    if mask.sum() > 0:
-        gdf_subset = gdf_merged[mask].copy()
-        gdf_subset['id'] = range(len(gdf_subset))
+# Layer 1: Actual results, one trace per winner
+all_winners = sorted(gdf_merged['actual_winner'].unique())
+
+for winner in all_winners:
+    mask   = gdf_merged['actual_winner'] == winner
+    subset = gdf_merged[mask].copy().reset_index(drop=True)
+    subset['_id'] = range(len(subset))
+    color  = COLORS.get(winner, COLORS['Other'])
+    fig.add_trace(go.Choroplethmapbox(
+        geojson=subset.__geo_interface__,
+        locations=subset['_id'],
+        z=[1] * len(subset),
+        colorscale=[[0, color], [1, color]],
+        showscale=False,
+        marker_line_width=0.5,
+        marker_line_color='white',
+        marker_opacity=0.7,
+        text=subset['hover_text'],
+        hovertemplate='%{text}<extra></extra>',
+        name=winner,                           # clean name, no count clutter
+        featureidkey='properties._id',
+        visible=True,
+    ))
+
+# Layer 2: Predicted vs Actual
+if has_predictions:
+    for correct_val, label, fill_color in [
+        (True,  'Correct ✓',   'rgba(0,180,0,0.6)'),
+        (False, 'Incorrect ✗', 'rgba(210,30,30,0.6)'),
+    ]:
+        mask   = gdf_merged['prediction_correct'] == correct_val
+        subset = gdf_merged[mask].copy().reset_index(drop=True)
+        subset['_id'] = range(len(subset))
         fig.add_trace(go.Choroplethmapbox(
-            geojson=gdf_subset.__geo_interface__,
-            locations=gdf_subset['id'],
-            z=[1] * len(gdf_subset),
-            colorscale=[[0, COLORS[cand]], [1, COLORS[cand]]],
+            geojson=subset.__geo_interface__,
+            locations=subset['_id'],
+            z=[1] * len(subset),
+            colorscale=[[0, fill_color], [1, fill_color]],
             showscale=False,
-            marker_line_width=0.5,
+            marker_line_width=1.5,
             marker_line_color='white',
-            marker_opacity=0.6,
-            text=gdf_subset['hover_text'],
+            marker_opacity=0.65,
+            text=subset['hover_text'],
             hovertemplate='%{text}<extra></extra>',
-            name=f'{cand} ({mask.sum()} precincts)',
-            featureidkey="properties.id"
+            name=label,
+            featureidkey='properties._id',
+            visible=False,
         ))
 
-for region, gdf_region in regional_boundaries.items():
-    geom = gdf_region.geometry.iloc[0]
-    polygons = list(geom.geoms) if geom.geom_type == 'MultiPolygon' else [geom]
-    for poly in polygons:
-        coords = list(poly.exterior.coords)
+# Layer 3: Over/Under performance — one trace per candidate
+# z = actual_pct - predicted_pct (percentage points)
+# Diverging colorscale: red (underperformed) → white (on target) → candidate color (overperformed)
+# Only built if we have predictions to compare against.
+
+perf_candidate_trace_indices = {}  # cand → trace index in fig.data
+
+if has_predictions:
+    # Build per-candidate performance hover text
+    def make_perf_hover(row, cand):
+        display  = str(row.get('display_name', '') or '').strip() or 'Unknown'
+        region   = row.get('region', '')
+        actual   = row.get(f'actual_pct_{cand}', 0)
+        pred_col = f'predicted_pct_{cand}'
+        pred     = row.get(pred_col, None)
+        if pred is None:
+            return f"<b>{display}</b><br><i>{region}</i><br>No prediction data"
+        diff = actual - pred
+        arrow = '▲' if diff > 0 else '▼' if diff < 0 else '●'
+        color = '#4caf50' if diff > 0 else 'tomato' if diff < 0 else '#aaa'
+        return (
+            f"<b>{display}</b><br>"
+            f"<i>{region}</i><br>"
+            f"<span style='font-family:monospace'>"
+            f"{cand}<br>"
+            f"Actual:    {actual:>6.1f}%<br>"
+            f"Predicted: {pred:>6.1f}%<br>"
+            f"<span style='color:{color};font-weight:bold;'>"
+            f"{arrow} {diff:+.1f} pts</span>"
+            f"</span>"
+        )
+
+    # predicted_pct_{cand} columns are now on gdf_merged from the step-3 merge
+    # Nothing extra needed — just verify they're present
+    missing_pred = [c for c in CANDIDATES if f'predicted_pct_{c}' not in gdf_merged.columns]
+    if missing_pred:
+        print(f"  ⚠ Missing predicted_pct columns for: {missing_pred} — performance layer may be incomplete")
+
+    # Build one trace per candidate
+    gdf_all = gdf_merged.copy().reset_index(drop=True)
+    gdf_all['_perf_id'] = range(len(gdf_all))
+
+    for cand in CANDIDATES:
+        cand_color = COLORS[cand]
+        pred_col   = f'predicted_pct_{cand}'
+        actual_col = f'actual_pct_{cand}'
+
+        has_data = gdf_all[pred_col].notna() & (gdf_all[actual_col] > 0)
+        z_vals = np.where(
+            has_data,
+            gdf_all[actual_col] - gdf_all[pred_col],
+            np.nan
+        )
+
+        # Clamp to ±20 pp for colorscale (outliers don't wash out the scale)
+        z_display = np.where(has_data, np.clip(z_vals, -20, 20), np.nan)
+
+        # No-data precincts get their own grey trace
+        no_data_mask = ~has_data
+        if no_data_mask.sum() > 0:
+            gdf_nodata = gdf_all[no_data_mask].copy().reset_index(drop=True)
+            gdf_nodata['_nd_id'] = range(len(gdf_nodata))
+            fig.add_trace(go.Choroplethmapbox(
+                geojson=gdf_nodata.__geo_interface__,
+                locations=gdf_nodata['_nd_id'],
+                z=[0] * len(gdf_nodata),
+                colorscale=[[0, 'rgb(180,180,180)'], [1, 'rgb(180,180,180)']],
+                showscale=False,
+                marker_line_width=0.3,
+                marker_line_color='rgba(255,255,255,0.2)',
+                marker_opacity=0.5,
+                hovertemplate='<b>%{text}</b><br><i>No results reported</i><extra></extra>',
+                text=gdf_nodata.apply(lambda r: str(r.get('display_name','') or 'Unknown'), axis=1),
+                name=f'{cand} no data',
+                featureidkey='properties._nd_id',
+                visible=False,
+            ))
+            # Track this grey trace alongside its candidate's performance trace
+            perf_candidate_trace_indices[f'{cand}_nodata'] = len(fig.data) - 1
+
+        # Hover text per precinct
+        hover_perf = gdf_all.apply(lambda r: make_perf_hover(r, cand), axis=1)
+
+        # Diverging colorscale: red → white → green
+        colorscale = [
+            [0.0,  'rgb(180,0,0)'],
+            [0.35, 'rgb(240,100,100)'],
+            [0.5,  'rgb(220,220,220)'],
+            [0.65, 'rgb(80,200,100)'],
+            [1.0,  'rgb(0,140,50)'],
+        ]
+
+        perf_trace_idx = len(fig.data)
+        perf_candidate_trace_indices[cand] = perf_trace_idx
+
+        fig.add_trace(go.Choroplethmapbox(
+            geojson=gdf_all.__geo_interface__,
+            locations=gdf_all['_perf_id'],
+            z=z_display,
+            zmin=-20, zmax=20,
+            colorscale=colorscale,
+            showscale=True,
+            colorbar=dict(
+                title=dict(text='pp vs model', font=dict(color='white', size=11)),
+                tickfont=dict(color='white', size=10),
+                tickvals=[-20, -10, 0, 10, 20],
+                ticktext=['-20+', '-10', '0', '+10', '+20'],
+                len=0.5, thickness=14,
+                x=1.01,
+                bgcolor='rgba(0,0,0,0.4)',
+            ),
+            marker_line_width=0.4,
+            marker_line_color='rgba(255,255,255,0.3)',
+            marker_opacity=0.85,
+            text=hover_perf,
+            hovertemplate='%{text}<extra></extra>',
+            name=f'{cand} performance',
+            featureidkey='properties._perf_id',
+            visible=False,
+        ))
+
+    n_perf_traces = len(CANDIDATES)
+else:
+    n_perf_traces = 0
+
+# ---- Count boundary traces (added next) ----
+# We load clean boundary polygons rather than deriving from precinct edges,
+# which always produces jagged internal lines.
+
+def geom_to_lonlat(geom):
+    """Polygon/MultiPolygon → lon/lat lists with None pen-lift separators."""
+    lons, lats = [], []
+    polys = list(geom.geoms) if geom.geom_type == 'MultiPolygon' else [geom]
+    for poly in polys:
+        xs, ys = poly.exterior.xy
+        lons += list(xs) + [None]
+        lats += list(ys) + [None]
+        for interior in poly.interiors:
+            xs, ys = interior.xy
+            lons += list(xs) + [None]
+            lats += list(ys) + [None]
+    return lons, lats
+
+def add_boundary(shp_path, color='black', width=3, filter_col=None,
+                 filter_val=None, label='boundary'):
+    """Load a shapefile and add its outline as a Scattermapbox trace."""
+    try:
+        gdf_b = gpd.read_file(shp_path)
+        if gdf_b.crs is None:
+            gdf_b = gdf_b.set_crs(epsg=4326)
+        else:
+            gdf_b = gdf_b.to_crs(epsg=4326)
+        if filter_col and filter_val is not None:
+            gdf_b = gdf_b[gdf_b[filter_col].astype(str).str.contains(
+                str(filter_val), case=False, na=False)]
+        if len(gdf_b) == 0:
+            print(f"  WARNING: no features found in {shp_path} "
+                  f"(filter: {filter_col}={filter_val})")
+            return
+        geom = gdf_b.geometry.unary_union
+        lons, lats = geom_to_lonlat(geom)
         fig.add_trace(go.Scattermapbox(
-            lon=[c[0] for c in coords], lat=[c[1] for c in coords],
-            mode='lines', line=dict(width=3, color='black'),
-            hoverinfo='skip', showlegend=False
+            lon=lons, lat=lats,
+            mode='lines',
+            line=dict(width=width, color=color),
+            hoverinfo='skip',
+            showlegend=False,
+            visible=True,
+        ))
+        print(f"  ✓ Boundary: {label}")
+    except Exception as e:
+        print(f"  ⚠ Could not load boundary {shp_path}: {e}")
+
+print("\nLoading boundary shapefiles...")
+
+# IL-09 congressional district outer boundary
+add_boundary(
+    CONGRESSIONAL_DISTRICTS_PATH,
+    color='black', width=3.5,
+    filter_col=district_col, filter_val='9',
+    label='IL-09 district'
+)
+
+# Chicago city boundary
+add_boundary(
+    CHICAGO_BOUNDARY_PATH,
+    color='black', width=2,
+    label='Chicago'
+)
+
+# Evanston boundary
+add_boundary(
+    EVANSTON_BOUNDARY_PATH,
+    color='black', width=2,
+    label='Evanston'
+)
+
+# Map center
+gdf_proj = gdf_merged.to_crs(epsg=3857)
+center   = gpd.GeoSeries(
+    [gdf_proj.geometry.unary_union.centroid], crs=3857
+).to_crs(4326)[0]
+
+n_actual_traces   = len(all_winners)
+n_accuracy_traces = 2 if has_predictions else 0
+n_perf_traces_val = len([k for k in perf_candidate_trace_indices]) if has_predictions else 0
+n_boundary_traces = len(fig.data) - n_actual_traces - n_accuracy_traces - n_perf_traces_val
+
+def make_visibility(show_actual, show_accuracy, perf_cand=None):
+    total = len(fig.data)
+    vis = [False] * total
+    # actual traces
+    for i in range(n_actual_traces):
+        vis[i] = show_actual
+    # accuracy traces
+    for i in range(n_actual_traces, n_actual_traces + n_accuracy_traces):
+        vis[i] = show_accuracy
+    # performance traces — show the selected candidate + its grey no-data trace
+    if perf_cand:
+        main_idx = perf_candidate_trace_indices.get(perf_cand)
+        grey_idx = perf_candidate_trace_indices.get(f'{perf_cand}_nodata')
+        if main_idx is not None:
+            vis[main_idx] = True
+        if grey_idx is not None:
+            vis[grey_idx] = True
+    # boundaries always on
+    for i in range(total - n_boundary_traces, total):
+        vis[i] = True
+    return vis
+
+# ---- Main layer toggle buttons ----
+buttons_layer = [
+    dict(label='Actual Results',
+         method='update',
+         args=[{'visible': make_visibility(True, False)},
+               {'updatemenus[1].visible': False}]),
+]
+if has_predictions:
+    buttons_layer.append(dict(
+        label='Predicted vs Actual',
+        method='update',
+        args=[{'visible': make_visibility(False, True)},
+              {'updatemenus[1].visible': False}],
+    ))
+if n_perf_traces_val > 0:
+    # Show performance layer for first candidate by default when clicked
+    first_cand = CANDIDATES[0]
+    buttons_layer.append(dict(
+        label='Model Performance',
+        method='update',
+        args=[{'visible': make_visibility(False, False, first_cand)},
+              {'updatemenus[1].visible': True}],
+    ))
+
+# ---- Candidate selector dropdown (only visible in performance mode) ----
+perf_dropdown_buttons = []
+if n_perf_traces_val > 0:
+    for cand in CANDIDATES:
+        perf_dropdown_buttons.append(dict(
+            label=cand,
+            method='update',
+            args=[{'visible': make_visibility(False, False, cand)}],
         ))
 
-gdf_proj = gdf_merged.to_crs(epsg=3857)
-center = gpd.GeoSeries([gdf_proj.geometry.unary_union.centroid], crs=3857).to_crs(4326)[0]
+updatemenus = [
+    # Main layer toggle
+    dict(
+        type='buttons', direction='right',
+        x=0.5, xanchor='center', y=1.08, yanchor='top',
+        buttons=buttons_layer,
+        bgcolor='white', bordercolor='#333', font=dict(size=13),
+        name='layer_toggle',
+    ),
+]
+if perf_dropdown_buttons:
+    updatemenus.append(dict(
+        type='dropdown',
+        x=0.5, xanchor='center', y=1.01, yanchor='top',
+        buttons=perf_dropdown_buttons,
+        bgcolor='rgba(20,20,40,0.95)',
+        bordercolor='rgba(255,255,255,0.3)',
+        font=dict(size=13, color='white'),
+        visible=False,  # only shown when performance mode active
+        name='cand_selector',
+    ))
 
 fig.update_layout(
-    mapbox=dict(style="open-street-map", zoom=9.5,
-                center=dict(lat=center.y, lon=center.x)),
-    margin={"r": 0, "t": 50, "l": 0, "b": 0},
-    title={'text': 'IL-09 Democratic Primary', 'x': 0.5,
-           'xanchor': 'center', 'font': {'size': 24}},
+    mapbox=dict(
+        style='carto-positron',
+        zoom=9.5,
+        center=dict(lat=center.y, lon=center.x),
+    ),
+    margin={'r': 0, 't': 10, 'l': 0, 'b': 0},
+    title=None,
     height=800,
     showlegend=True,
-    legend=dict(title="Most Likely Winner", yanchor="top", y=0.99,
-                xanchor="left", x=0.01, bgcolor="rgba(255,255,255,0.9)")
+    legend=dict(title='Actual Winner', yanchor='top', y=0.99,
+                xanchor='left', x=0.01, bgcolor='rgba(255,255,255,0.9)'),
+    updatemenus=updatemenus,
 )
 
 # ============================================================================
-# BANKED VOTE CALCULATION
+# STEP 8: STATS HTML  — dark theme matching prediction map style
 # ============================================================================
 
-print("\nCalculating banked votes from votes.csv...")
-banked_by_region, district_banked, batch_log = compute_banked_votes(
-    poll_data, VOTES_CSV, regional_forecast_data
+sorted_totals = sorted(
+    [(c, int(df[f'actual_votes_{c}'].sum())) for c in CANDIDATES],
+    key=lambda x: -x[1],
 )
+other_total = int(df['actual_votes_Other'].sum())
+grand_total = sum(v for _, v in sorted_totals) + other_total
+precinct_wins = gdf_merged['actual_winner'].value_counts().to_dict()
+total_prec    = len(gdf_merged)
 
-# ============================================================================
-# BUILD STATS HTML
-# ============================================================================
-
-sorted_district = sorted(district_win_probs.items(), key=lambda x: x[1], reverse=True)
-sorted_baseline = sorted(baseline_avg.items(), key=lambda x: x[1], reverse=True)
-total_sims = sum(district_sim_wins.values()) if district_sim_wins else 100_000
-
-stats_html = f"""
-<div style="max-width: 1400px; margin: 20px auto; padding: 20px; font-family: Arial, sans-serif;">
-
-    <!-- Color Key -->
-    <div style="margin-bottom: 30px; padding: 20px; background-color: #f9f9f9; border-radius: 8px;">
-        <h2 style="text-align: center; color: #333; border-bottom: 3px solid #333; padding-bottom: 10px; font-size: 1.3rem;">
-            Candidate Color Key
-        </h2>
-        <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; margin-top: 20px;">
-"""
-for cand in CANDIDATES:
-    stats_html += f"""
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <div style="width: 30px; height: 30px; background-color: {COLORS[cand]}; border: 2px solid #333; border-radius: 4px;"></div>
-                <span style="font-weight: bold; font-size: 1rem;">{cand}</span>
-            </div>
-"""
-
-stats_html += """
-        </div>
-    </div>
-
-    <!-- District-Wide Tables -->
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; justify-items: center; margin-bottom: 40px;">
-
-        <!-- Win Probabilities -->
-        <div style="width: 100%; max-width: 400px;">
-            <h2 style="text-align: center; color: black; border-bottom: 3px solid #333; padding-bottom: 10px; font-size: 1.2rem;">
-                District-Wide Win Probabilities
-            </h2>
-            <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.9rem;">
-                <thead><tr style="background-color: #f0f0f0;">
-                    <th style="padding: 10px 8px; text-align: left; border: 1px solid #ddd;">Candidate</th>
-                    <th style="padding: 10px 8px; text-align: right; border: 1px solid #ddd;">Win Prob.</th>
-                </tr></thead><tbody>
-"""
-for cand, prob in sorted_district:
-    stats_html += f"""
-                <tr><td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">{cand}</td>
-                    <td style="padding: 8px; border: 1px solid #ddd; text-align: right; font-family: monospace;">{prob:.1f}%</td></tr>
-"""
-stats_html += """        </tbody></table></div>
-
-        <!-- Poll Average -->
-        <div style="width: 100%; max-width: 400px;">
-            <h2 style="text-align: center; color: black; border-bottom: 3px solid #333; padding-bottom: 10px; font-size: 1.2rem;">
-                Weighted Poll Average
-            </h2>
-            <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.9rem;">
-                <thead><tr style="background-color: #f0f0f0;">
-                    <th style="padding: 10px 8px; text-align: left; border: 1px solid #ddd;">Candidate</th>
-                    <th style="padding: 10px 8px; text-align: right; border: 1px solid #ddd;">Poll Avg</th>
-                </tr></thead><tbody>
-"""
-for cand, pct in sorted_baseline:
-    if cand in CANDIDATES:
-        stats_html += f"""
-                <tr><td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">{cand}</td>
-                    <td style="padding: 8px; border: 1px solid #ddd; text-align: right; font-family: monospace;">{pct:.1f}%</td></tr>
-"""
-stats_html += """        </tbody></table></div>
-
-        <!-- Projected Results -->
-        <div style="width: 100%; max-width: 400px;">
-            <h2 style="text-align: center; color: black; border-bottom: 3px solid #333; padding-bottom: 10px; font-size: 1.2rem;">
-                Projected Results
-            </h2>
-            <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.9rem;">
-                <thead><tr style="background-color: #f0f0f0;">
-                    <th style="padding: 10px 8px; text-align: left; border: 1px solid #ddd;">Candidate</th>
-                    <th style="padding: 10px 8px; text-align: right; border: 1px solid #ddd;">Vote Share</th>
-                </tr></thead><tbody>
-"""
-for cand, prob in sorted_district:
-    stats_html += f"""
-                <tr><td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">{cand}</td>
-                    <td style="padding: 8px; border: 1px solid #ddd; text-align: right; font-family: monospace;">{district_median[cand]:.1f}%</td></tr>
-"""
-stats_html += f"""        </tbody></table></div>
-
-        <!-- Simulations Won -->
-        <div style="width: 100%; max-width: 400px;">
-            <h2 style="text-align: center; color: black; border-bottom: 3px solid #333; padding-bottom: 10px; font-size: 1.2rem;">
-                Simulations Won
-            </h2>
-            <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.9rem;">
-                <thead><tr style="background-color: #f0f0f0;">
-                    <th style="padding: 10px 8px; text-align: left; border: 1px solid #ddd;">Candidate</th>
-                    <th style="padding: 10px 8px; text-align: right; border: 1px solid #ddd;">Wins</th>
-                </tr></thead><tbody>
-"""
-for cand, wins in sorted(district_sim_wins.items(), key=lambda x: x[1], reverse=True):
-    if cand in CANDIDATES:
-        stats_html += f"""
-                <tr><td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">{cand}</td>
-                    <td style="padding: 8px; border: 1px solid #ddd; text-align: right; font-family: monospace;">{wins:,}</td></tr>
-"""
-stats_html += f"""        </tbody></table>
-            <p style="text-align: center; color: black; font-size: 0.85rem; margin-top: 10px;">Out of {total_sims:,} simulations</p>
-        </div>
-    </div>
-
-    <!-- Regional Breakdown -->
-    <div style="margin-top: 40px;">
-        <h2 style="text-align: center; color: black; border-bottom: 3px solid #333; padding-bottom: 10px; font-size: 1.4rem; margin-bottom: 20px;">
-            Regional Breakdown - Projected Vote Shares
-        </h2>
-"""
-for region in regions:
-    if region not in regional_stats:
-        continue
-    stats = regional_stats[region]
-    stats_html += f"""
-        <div style="margin-bottom: 30px;">
-            <h3 style="color: black; font-size: 1.1rem; margin-bottom: 10px;">
-                {region}
-                <span style="font-size: 0.9rem; color: black;">({stats['turnout_pct']:.1f}% of district turnout, {stats['num_precincts']} precincts)</span>
-            </h3>
-            <table style="width: 100%; max-width: 800px; border-collapse: collapse; font-size: 0.9rem; margin: 0 auto;">
-                <thead><tr style="background-color: #f0f0f0;">
-                    <th style="padding: 8px; text-align: left; border: 1px solid #ddd;">Candidate</th>
-                    <th style="padding: 8px; text-align: right; border: 1px solid #ddd;">Projected Vote Share</th>
-                </tr></thead><tbody>
-"""
-    for cand, share in sorted(stats['candidate_shares'].items(), key=lambda x: x[1], reverse=True):
-        stats_html += f"""
-                <tr><td style="padding: 6px 8px; border: 1px solid #ddd; font-weight: bold;">{cand}</td>
-                    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: right; font-family: monospace;">{share:.1f}%</td></tr>
-"""
-    stats_html += """        </tbody></table></div>"""
-
-# Most Competitive Precincts
-stats_html += """
-    </div>
-    <div style="margin-top: 40px;">
-        <h2 style="text-align: center; color: black; border-bottom: 3px solid #333; padding-bottom: 10px; font-size: 1.4rem; margin-bottom: 20px;">
-            Top 10 Most Competitive Precincts
-        </h2>
-        <div style="overflow-x: auto;">
-            <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
-                <thead>
-                    <tr style="background-color: #f0f0f0;">
-                        <th style="padding: 8px; text-align: left; border: 1px solid #ddd; min-width: 150px;">Precinct</th>
-"""
-for cand in CANDIDATES:
-    stats_html += f'<th style="padding: 8px; text-align: center; border: 1px solid #ddd;" colspan="2">{cand}</th>\n'
-stats_html += """                    </tr>
-                    <tr style="background-color: #f8f8f8;">
-                        <th style="padding: 6px; border: 1px solid #ddd;"></th>
-"""
-for _ in CANDIDATES:
-    stats_html += """<th style="padding: 6px; text-align: center; border: 1px solid #ddd; font-size: 0.75rem;">Win%</th>
-                        <th style="padding: 6px; text-align: center; border: 1px solid #ddd; font-size: 0.75rem;">Vote%</th>\n"""
-stats_html += """                    </tr></thead><tbody>"""
-
-for idx, row in competitive_precincts.iterrows():
-    precinct_name = row.get('precinct_name', row.get('JoinField_csv', row.get('JoinField_shape', 'Unknown')))
-    sorted_probs = get_sorted_probabilities(row)
-    stats_html += f'<tr><td style="padding: 6px 8px; border: 1px solid #ddd; font-weight: bold;">{precinct_name}</td>\n'
-    for cand in CANDIDATES:
-        win_prob = row[f'win_prob_{cand}'] * 100
-        vote_pct = row[f'median_pct_{cand}']
-        bg = ("background-color: #90EE90;" if cand == sorted_probs[0][0]
-              else "background-color: #FFE4B5;" if cand == sorted_probs[1][0]
-              else "")
-        stats_html += (f'<td style="padding: 6px; border: 1px solid #ddd; text-align: center; font-family: monospace; {bg}">{win_prob:.1f}</td>'
-                       f'<td style="padding: 6px; border: 1px solid #ddd; text-align: center; font-family: monospace; {bg}">{vote_pct:.1f}</td>\n')
-    stats_html += "</tr>\n"
-
-stats_html += """            </tbody></table></div>
-        <p style="text-align: center; color: black; font-size: 0.85rem; margin-top: 10px;">
-            <span style="background-color: #90EE90; padding: 2px 6px;">Green</span> = Most likely winner |
-            <span style="background-color: #FFE4B5; padding: 2px 6px;">Orange</span> = Second most likely
-        </p>
-    </div>
-</div>
-"""
-
-# ============================================================================
-# BANKED VOTE HTML
-# ============================================================================
-
-region_display_names = {
-    'Chicago':       'City of Chicago',
-    'Suburban Cook': 'Suburban Cook County (incl. Evanston)',
-    'Lake County':   'Lake County',
-    'McHenry County':'McHenry County',
-}
-
-if banked_by_region and district_banked and batch_log:
-    total_banked_votes = sum(district_banked.values())
-    sorted_cands_banked = sorted(CANDIDATES, key=lambda c: district_banked[c], reverse=True)
-
-    banked_html = f"""
-<div style="max-width: 1400px; margin: 40px auto; padding: 20px; font-family: Arial, sans-serif;">
-    <h2 style="text-align: center; color: black; border-bottom: 3px solid #333; padding-bottom: 10px; font-size: 1.4rem; margin-bottom: 8px;">
-        Estimated Banked Vote by Region
-    </h2>
-    <p style="text-align: center; color: #555; font-size: 0.9rem; margin-bottom: 8px;">
-        Each batch of votes is distributed using the polling baseline from the closest
-        historical snapshot ≤ the vote report date, blended with regional vote share
-        patterns. Update <code>data/csv_data/votes.csv</code> as new totals come in.
-    </p>
-"""
-
-    # Batch log table
-    banked_html += """
-    <div style="margin-bottom: 28px; overflow-x: auto;">
-        <h3 style="color: black; font-size: 1.05rem; margin-bottom: 8px; text-align: center;">
-            Vote Batch Log — Snapshot Used per Date
-        </h3>
-        <table style="width: 100%; max-width: 700px; border-collapse: collapse; font-size: 0.85rem; margin: 0 auto;">
-            <thead><tr style="background-color: #f0f0f0;">
-                <th style="padding: 8px; text-align: left; border: 1px solid #ddd;">Report Date</th>
-                <th style="padding: 8px; text-align: right; border: 1px solid #ddd;">New Votes</th>
-                <th style="padding: 8px; text-align: right; border: 1px solid #ddd;">Cumulative</th>
-                <th style="padding: 8px; text-align: left; border: 1px solid #ddd;">Polling Snapshot Used</th>
-            </tr></thead><tbody>
-"""
-    for batch in batch_log:
-        banked_html += f"""
-            <tr>
-                <td style="padding: 6px 8px; border: 1px solid #ddd; font-weight: bold;">{batch['date']}</td>
-                <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: right; font-family: monospace;">+{batch['new_votes']:,}</td>
-                <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: right; font-family: monospace;">{batch['cumulative']:,}</td>
-                <td style="padding: 6px 8px; border: 1px solid #ddd; font-family: monospace;">{batch['snapshot_used']}</td>
-            </tr>
-"""
-    banked_html += "        </tbody></table></div>\n"
-
-    # Per-region tables
-    banked_html += """    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; margin-bottom: 40px;">\n"""
-
-    for region_key in ['Chicago', 'Suburban Cook', 'Lake County', 'McHenry County']:
-        rdata = regional_forecast_data.get(region_key, {})
-        display_name = region_display_names.get(region_key, region_key)
-        region_info = banked_by_region.get(region_key, {})
-        cast = region_info.get('cast', 0)
-        cand_banked = region_info.get('by_candidate', {})
-        expected_turnout = rdata.get('expected_turnout', 0)
-        pct_of_expected = (cast / expected_turnout * 100) if expected_turnout > 0 else 0
-        sorted_regional = sorted(CANDIDATES, key=lambda c: cand_banked.get(c, 0), reverse=True)
-
-        banked_html += f"""
-        <div style="background-color: #f9f9f9; border-radius: 8px; padding: 16px;">
-            <h3 style="color: black; font-size: 1.05rem; text-align: center; margin-bottom: 4px;">{display_name}</h3>
-            <p style="text-align: center; color: #555; font-size: 0.85rem; margin-bottom: 12px;">
-                {cast:,} votes cast"""
-        if expected_turnout > 0:
-            banked_html += f" &nbsp;|&nbsp; ~{pct_of_expected:.1f}% of expected turnout ({expected_turnout:,})"
-        banked_html += """</p>
-            <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
-                <thead><tr style="background-color: #e8e8e8;">
-                    <th style="padding: 8px; text-align: left; border: 1px solid #ddd;">Candidate</th>
-                    <th style="padding: 8px; text-align: right; border: 1px solid #ddd;">Est. Votes</th>
-                    <th style="padding: 8px; text-align: right; border: 1px solid #ddd;">Share</th>
-                </tr></thead><tbody>
-"""
-        for i, cand in enumerate(sorted_regional):
-            est_v = cand_banked.get(cand, 0)
-            share = (est_v / cast * 100) if cast > 0 else 0
-            row_bg = "#ffffff" if i % 2 == 0 else "#f4f4f4"
-            cand_color = COLORS.get(cand, '#333')
-            banked_html += f"""
-                <tr style="background-color: {row_bg};">
-                    <td style="padding: 6px 8px; border: 1px solid #ddd; font-weight: bold;">
-                        <span style="display:inline-block; width:10px; height:10px; background:{cand_color}; border-radius:2px; margin-right:5px;"></span>{cand}
-                    </td>
-                    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: right; font-family: monospace;">{est_v:,}</td>
-                    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: right; font-family: monospace;">{share:.1f}%</td>
-                </tr>
-"""
-        banked_html += "            </tbody></table></div>\n"
-
-    banked_html += "    </div>\n"
-
-    # District-wide rollup
-    district_expected_turnout = sum(
-        regional_forecast_data.get(r, {}).get('expected_turnout', 0)
-        for r in ['Chicago', 'Suburban Cook', 'Lake County', 'McHenry County']
+if has_predictions:
+    accuracy_by_region = (
+        gdf_merged.groupby('region')['prediction_correct']
+        .agg(['sum', 'count', 'mean'])
+        .rename(columns={'sum': 'correct', 'count': 'total', 'mean': 'pct'})
+        .sort_values('pct', ascending=False)
     )
-    district_pct_in = (total_banked_votes / district_expected_turnout * 100) if district_expected_turnout > 0 else 0
 
-    banked_html += f"""
-    <div style="padding: 20px; background-color: #f0f0f0; border-radius: 8px;">
-        <h3 style="text-align: center; color: black; font-size: 1.15rem; margin-bottom: 16px; border-bottom: 2px solid #ccc; padding-bottom: 8px;">
-            District-Wide Banked Vote Estimate &nbsp;({total_banked_votes:,} total votes cast)
-        </h3>
-        <table style="width: 100%; max-width: 600px; border-collapse: collapse; font-size: 0.95rem; margin: 0 auto;">
-            <thead><tr style="background-color: #ddd;">
-                <th style="padding: 10px 8px; text-align: left; border: 1px solid #ccc;">Candidate</th>
-                <th style="padding: 10px 8px; text-align: right; border: 1px solid #ccc;">Est. Banked Votes</th>
-                <th style="padding: 10px 8px; text-align: right; border: 1px solid #ccc;">Share of Banked</th>
-            </tr></thead><tbody>
-"""
-    for cand in sorted_cands_banked:
-        bv = district_banked[cand]
-        share_pct = (bv / total_banked_votes * 100) if total_banked_votes > 0 else 0
-        cand_color = COLORS.get(cand, '#333')
-        banked_html += f"""
-            <tr>
-                <td style="padding: 8px; border: 1px solid #ccc; font-weight: bold;">
-                    <span style="display:inline-block; width:12px; height:12px; background:{cand_color}; border-radius:2px; margin-right:6px;"></span>{cand}
-                </td>
-                <td style="padding: 8px; border: 1px solid #ccc; text-align: right; font-family: monospace;">{bv:,}</td>
-                <td style="padding: 8px; border: 1px solid #ccc; text-align: right; font-family: monospace;">{share_pct:.1f}%</td>
-            </tr>
-"""
-    banked_html += f"""        </tbody></table>
-        <p style="text-align: center; color: #777; font-size: 0.8rem; margin-top: 12px;">
-            Estimates use the closest historical polling snapshot for each vote batch,
-            blended with regional geographic patterns.
-            {f'{district_pct_in:.1f}% of expected district turnout reported.' if district_expected_turnout > 0 else ''}
-        </p>
-    </div>
-</div>
+# ---- helper: render one dark-styled table ----
+def dark_table(title, headers, rows, footer=None):
+    """
+    headers: list of (label, align)  e.g. [('Candidate','left'),('Votes','right')]
+    rows:    list of (color_hex_or_None, list_of_cell_strings)
+    """
+    h = f"""
+    <div style="background:rgba(255,255,255,0.06); border-radius:10px;
+                padding:20px; min-width:260px;">
+      <h2 style="color:#fff; font-size:1.05rem; font-weight:700; letter-spacing:.5px;
+                 border-bottom:2px solid rgba(255,255,255,0.15); padding-bottom:10px;
+                 margin-bottom:14px; text-align:center;">{title}</h2>
+      <table style="width:100%; border-collapse:collapse; font-size:0.88rem;">
+        <thead><tr style="background:rgba(255,255,255,0.08);">"""
+    for label, align in headers:
+        h += f'<th style="padding:8px 10px; text-align:{align}; color:rgba(255,255,255,0.6); font-weight:600; font-size:0.78rem; letter-spacing:.4px; text-transform:uppercase;">{label}</th>'
+    h += "</tr></thead><tbody>"
+    for i, (color, cells) in enumerate(rows):
+        bg = "background:rgba(255,255,255,0.04);" if i % 2 == 0 else ""
+        h += f'<tr style="{bg}">'
+        for j, (cell, align) in enumerate(zip(cells, [a for _, a in headers])):
+            if j == 0 and color:
+                h += f'<td style="padding:8px 10px; text-align:{align}; color:#fff; font-weight:600; border-left:3px solid {color}; padding-left:10px;">{cell}</td>'
+            else:
+                h += f'<td style="padding:8px 10px; text-align:{align}; color:rgba(255,255,255,0.85); font-family:monospace;">{cell}</td>'
+        h += "</tr>"
+    if footer:
+        h += f'<tr style="background:rgba(255,255,255,0.1);"><td colspan="{len(headers)}" style="padding:8px 10px; color:rgba(255,255,255,0.5); font-size:0.8rem; text-align:center;">{footer}</td></tr>'
+    h += "</tbody></table></div>"
+    return h
+
+stats_html = """
+<div style="max-width:1400px; margin:0 auto; padding:30px 20px;
+            font-family:'Segoe UI',Arial,sans-serif; color:#fff;">
+
+  <h1 style="text-align:center; font-size:1.6rem; font-weight:700;
+             letter-spacing:1px; margin-bottom:30px; color:#fff;
+             text-shadow:0 2px 8px rgba(0,0,0,0.4);">
+    IL-09 Democratic Primary — Results
+  </h1>
 """
 
-else:
-    banked_html = """
-<div style="max-width: 1400px; margin: 40px auto; padding: 20px; font-family: Arial, sans-serif; text-align: center; color: #888;">
-    <p><em>Banked vote section unavailable — add <code>data/csv_data/votes.csv</code> with cumulative regional vote totals.</em></p>
-</div>
+# ---- Top grid: Vote Totals | Precincts Won | Accuracy ----
+stats_html += '<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:20px; margin-bottom:36px;">'
+
+# Vote Totals
+rows_vt = []
+for cand, votes in sorted_totals:
+    pct = votes / grand_total * 100 if grand_total > 0 else 0
+    rows_vt.append((COLORS[cand], [cand, f"{votes:,}", f"{pct:.1f}%"]))
+if other_total > 0:
+    op = other_total / grand_total * 100 if grand_total > 0 else 0
+    rows_vt.append(('#888', ['Other', f"{other_total:,}", f"{op:.1f}%"]))
+rows_vt.append((None, ['<span style="color:#fff;font-weight:700;">Total</span>',
+                        f'<span style="color:#fff;font-weight:700;">{grand_total:,}</span>',
+                        '<span style="color:#fff;font-weight:700;">100%</span>']))
+stats_html += dark_table(
+    'District-Wide Vote Totals',
+    [('Candidate','left'),('Votes','right'),('Share','right')],
+    rows_vt
+)
+
+# Precincts Won
+rows_pw = []
+for cand, wins in sorted(precinct_wins.items(), key=lambda x: -x[1]):
+    pct = wins / total_prec * 100 if total_prec > 0 else 0
+    color = COLORS.get(cand, '#888')
+    rows_pw.append((color, [cand, f"{wins:,}", f"{pct:.1f}%"]))
+stats_html += dark_table(
+    'Precincts Won',
+    [('Candidate','left'),('Precincts','right'),('Share','right')],
+    rows_pw,
+    footer=f"{total_prec:,} precincts total"
+)
+
+# Prediction Accuracy
+if has_predictions:
+    n_correct = int(gdf_merged['prediction_correct'].sum())
+    n_total   = len(gdf_merged)
+    rows_acc = []
+    for region, row in accuracy_by_region.iterrows():
+        pct_val = row['pct'] * 100
+        bar_color = '#4caf50' if pct_val >= 70 else '#ff9800' if pct_val >= 50 else '#f44336'
+        rows_acc.append((bar_color, [region, str(int(row['correct'])),
+                                      str(int(row['total'])), f"{pct_val:.1f}%"]))
+    acc_title = f"Model Accuracy &nbsp;<span style='font-size:1.3rem;font-weight:800;color:#4caf50;'>{overall_acc:.1f}%</span> <span style='font-size:0.75rem;color:rgba(255,255,255,0.5);'>({n_correct}/{n_total})</span>"
+    stats_html += dark_table(
+        acc_title,
+        [('Region','left'),('✓','right'),('Total','right'),('Acc.','right')],
+        rows_acc
+    )
+
+stats_html += '</div>'  # end top grid
+
+# ---- Regional Breakdown ----
+stats_html += """
+  <h2 style="text-align:center; font-size:1.2rem; font-weight:700; letter-spacing:.5px;
+             color:#fff; border-bottom:2px solid rgba(255,255,255,0.15);
+             padding-bottom:12px; margin-bottom:24px;">
+    Regional Vote Breakdown — Actual Results
+  </h2>
+  <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:20px;">
 """
+
+for region in regions:
+    region_df    = gdf_merged[gdf_merged['region'] == region]
+    if len(region_df) == 0:
+        continue
+    region_total = region_df['actual_total_votes'].sum()
+    n_prec       = len(region_df)
+
+    cand_region = {}
+    for cand in CANDIDATES:
+        col = f'actual_votes_{cand}'
+        if col in region_df.columns:
+            cand_region[cand] = int(region_df[col].sum())
+    other_r = int(region_df['actual_votes_Other'].sum()) if 'actual_votes_Other' in region_df.columns else 0
+    if other_r > 0:
+        cand_region['Other'] = other_r
+
+    rows_r = []
+    for cand, votes in sorted(cand_region.items(), key=lambda x: -x[1]):
+        pct = votes / region_total * 100 if region_total > 0 else 0
+        color = COLORS.get(cand, '#888')
+        rows_r.append((color, [cand, f"{votes:,}", f"{pct:.1f}%"]))
+
+    region_title = f"{region} <span style='font-size:0.75rem; font-weight:400; color:rgba(255,255,255,0.45);'>({n_prec} precincts · {int(region_total):,} votes)</span>"
+    stats_html += dark_table(
+        region_title,
+        [('Candidate','left'),('Votes','right'),('Share','right')],
+        rows_r
+    )
+
+stats_html += "  </div>\n</div>"
 
 # ============================================================================
-# FULL HTML OUTPUT
+# STEP 9: ASSEMBLE AND WRITE HTML
 # ============================================================================
 
-print(f"\nSaving map to {OUTPUT_HTML}...")
-plotly_html = fig.to_html(include_plotlyjs='cdn', div_id='map-div')
+print(f"\nWriting {OUTPUT_HTML}...")
+plotly_html = fig.to_html(include_plotlyjs='cdn', div_id='results-map-div')
 
 full_html = f"""<!DOCTYPE html>
 <html>
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=0.6">
-    <title>IL-09 Democratic Primary Prediction Model</title>
-    <style>
-        * {{ margin: 0; padding: 0; box-sizing: border-box; }}
-        body {{
-            font-family: Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            background-attachment: fixed;
-            min-height: 100vh;
-        }}
-        body::before {{
-            content: '';
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background-image: repeating-linear-gradient(45deg, transparent, transparent 35px,
-                rgba(255,255,255,.03) 35px, rgba(255,255,255,.03) 70px);
-            pointer-events: none; z-index: 0;
-        }}
-        nav {{
-            background-color: rgba(51,51,51,0.95);
-            padding: 15px 0;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-            position: relative; z-index: 100;
-            backdrop-filter: blur(10px);
-        }}
-        .nav-container {{
-            max-width: 1400px; margin: 0 auto; padding: 0 20px;
-            display: flex; justify-content: space-between; align-items: center;
-        }}
-        .nav-title {{ color: white; font-size: 1.5rem; font-weight: bold; }}
-        .nav-button {{
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white; padding: 10px 20px; text-decoration: none;
-            border-radius: 25px; font-weight: bold;
-        }}
-        .container {{
-            max-width: 1400px; margin: 40px auto; padding: 20px;
-            position: relative; z-index: 1;
-        }}
-        .hero-section {{
-            background: rgba(255,255,255,0.95);
-            padding: 40px; border-radius: 15px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
-            backdrop-filter: blur(10px);
-        }}
-        .hero-section h1 {{
-            text-align: center; margin-bottom: 20px;
-            border-bottom: 3px solid #667eea; padding-bottom: 10px;
-        }}
-        #map-div {{ height: 800px; }}
-        footer {{
-            background-color: rgba(51,51,51,0.95);
-            color: white; text-align: center;
-            padding: 20px; margin-top: 50px;
-        }}
-    </style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=0.6">
+  <title>IL-09 Democratic Primary — Actual Results</title>
+  <style>
+    * {{ margin:0; padding:0; box-sizing:border-box; }}
+    body {{
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      background-attachment: fixed;
+      min-height: 100vh;
+    }}
+    nav {{
+      background-color: rgba(20,20,40,0.97);
+      padding: 15px 0;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.4);
+      position: relative; z-index: 100;
+    }}
+    .nav-container {{
+      max-width: 1400px; margin: 0 auto; padding: 0 20px;
+      display: flex; justify-content: space-between; align-items: center;
+    }}
+    .nav-title {{ color: white; font-size: 1.4rem; font-weight: bold; }}
+    .nav-button {{
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white; padding: 9px 18px; text-decoration: none;
+      border-radius: 20px; font-weight: bold; font-size: 0.9rem;
+    }}
+    .container {{
+      max-width: 1400px; margin: 36px auto; padding: 0 20px;
+      position: relative; z-index: 1;
+    }}
+    .hero {{
+      background: rgba(255,255,255,0.97);
+      padding: 36px; border-radius: 14px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    }}
+    .hero h1 {{
+      text-align: center; margin-bottom: 18px;
+      border-bottom: 3px solid #333; padding-bottom: 10px;
+      font-size: 1.7rem;
+    }}
+    #results-map-div {{ height: 800px; }}
+    footer {{
+      background-color: rgba(20,20,40,0.97);
+      color: #ccc; text-align: center;
+      padding: 18px; margin-top: 50px; font-size: 0.9rem;
+    }}
+  </style>
 </head>
 <body>
 <nav>
-    <div class="nav-container">
-        <div class="nav-title">Cole's Election Models</div>
-        <a href="index.html" class="nav-button">Home</a>
-        <a href="Chicago Mayor.html" class="nav-button">Chicago Mayoral Races</a>
-        <a href="chicago_ideology_map.html" class="nav-button">Chicago Ideology Map</a>
-    </div>
+  <div class="nav-container">
+    <div class="nav-title">Cole's Election Models</div>
+    <a href="index.html" class="nav-button">Home</a>
+    <a href="IL09_precinct_map.html" class="nav-button">Prediction Map</a>
+  </div>
 </nav>
 <div class="container">
-    <div class="hero-section">
-        <h1>IL-09 Democratic Primary Model</h1>
-        <div id="map-container">{plotly_html}</div>
-    </div>
+  <div class="hero">
+    <h1>IL-09 Democratic Primary — Actual Results</h1>
+    <div id="map-container">{plotly_html}</div>
+  </div>
 </div>
 {stats_html}
-{banked_html}
-<footer>Cole's Election Models</footer>
+<footer>Cole's Election Models &nbsp;·&nbsp; IL-09 Democratic Primary 2026</footer>
 </body>
 </html>
 """
@@ -987,26 +997,27 @@ with open(OUTPUT_HTML, 'w', encoding='utf-8') as f:
 # ============================================================================
 
 print("\n" + "=" * 70)
-print("MAP CREATION COMPLETE!")
+print("ACTUAL RESULTS MAP COMPLETE!")
 print("=" * 70)
-print(f"\nOpen {OUTPUT_HTML} in your browser.")
+print(f"\nOpen {OUTPUT_HTML} in your browser.\n")
 
-print(f"\nPrecinct Summary by Winner:")
-for cand in CANDIDATES:
-    count = (gdf_merged['winner'] == cand).sum()
-    if count > 0:
-        print(f"  {cand}: {count} precincts ({count/len(gdf_merged)*100:.1f}%)")
+print("District-wide results:")
+for cand, votes in sorted_totals:
+    pct = votes / grand_total * 100 if grand_total > 0 else 0
+    bar = '█' * int(pct / 2)
+    print(f"  {cand:<20} {votes:>7,}  {pct:>5.1f}%  {bar}")
+if other_total > 0:
+    print(f"  {'Other':<20} {other_total:>7,}  {other_total/grand_total*100:>5.1f}%")
+print(f"  {'TOTAL':<20} {grand_total:>7,}")
 
-if batch_log:
-    total_bv = sum(district_banked.values())
-    print(f"\nBanked Vote Summary ({total_bv:,} total votes distributed):")
-    for cand in sorted_cands_banked:
-        bv = district_banked[cand]
-        print(f"  {cand:<16}: {bv:,} ({bv/total_bv*100:.1f}%)")
-    print(f"\nBatch log ({len(batch_log)} dates processed):")
-    for b in batch_log:
-        print(f"  {b['date']}: +{b['new_votes']:,} votes → snapshot {b['snapshot_used']}")
+print(f"\nPrecincts won:")
+for cand, wins in sorted(precinct_wins.items(), key=lambda x: -x[1]):
+    print(f"  {cand:<20} {wins:>4} precincts ({wins/total_prec*100:.1f}%)")
 
-print("\nRegional Breakdown:")
-for region, stats in regional_stats.items():
-    print(f"  {region}: {stats['turnout_pct']:.1f}% of turnout ({stats['num_precincts']} precincts)")
+if has_predictions:
+    print(f"\nPrediction accuracy: {overall_acc:.1f}% "
+          f"({int(gdf_merged['prediction_correct'].sum())}/{len(gdf_merged)} precincts)")
+    print("\nBy region:")
+    for region, row in accuracy_by_region.iterrows():
+        print(f"  {region:<35} {row['pct']*100:.1f}%  "
+              f"({int(row['correct'])}/{int(row['total'])})")
