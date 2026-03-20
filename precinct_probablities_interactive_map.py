@@ -809,14 +809,16 @@ buttons_layer = [
     dict(label='Actual Results',
          method='update',
          args=[{'visible': make_visibility(True, False)},
-               {'updatemenus[1].visible': False}]),
+               {'updatemenus[1].visible': False,
+                'updatemenus[2].visible': False}]),
 ]
 if has_predictions:
     buttons_layer.append(dict(
         label='Predicted vs Actual',
         method='update',
         args=[{'visible': make_visibility(False, True)},
-              {'updatemenus[1].visible': False}],
+              {'updatemenus[1].visible': False,
+               'updatemenus[2].visible': False}],
     ))
 if n_perf_traces_val > 0:
     first_cand = CANDIDATES[0]
@@ -825,6 +827,7 @@ if n_perf_traces_val > 0:
         method='update',
         args=[{'visible': make_visibility(False, False, perf_cand=first_cand)},
               {'updatemenus[1].visible': True,
+               'updatemenus[2].visible': False,
                'updatemenus[1].active': 0}],
     ))
 if n_dist_traces_val > 0:
@@ -833,49 +836,58 @@ if n_dist_traces_val > 0:
         label='vs District Avg',
         method='update',
         args=[{'visible': make_visibility(False, False, dist_cand=first_cand)},
-              {'updatemenus[1].visible': True,
-               'updatemenus[1].active': 0}],
+              {'updatemenus[1].visible': False,
+               'updatemenus[2].visible': True,
+               'updatemenus[2].active': 0}],
     ))
 
-# ---- Shared candidate dropdown (used by both performance layers) ----
-# Each button in the dropdown tries to show both perf and dist traces for the
-# selected candidate — only the ones that actually exist will be visible,
-# so whichever layer mode was active will remain correct.
-# We achieve this by always passing both cand args; make_visibility handles
-# the case where one set of indices is empty.
-shared_dropdown_buttons = []
+# ---- vs Model candidate dropdown ----
+perf_dropdown_buttons = []
 for cand in CANDIDATES:
-    shared_dropdown_buttons.append(dict(
+    perf_dropdown_buttons.append(dict(
         label=cand,
         method='update',
-        # We don't know which layer is active at click time, so we update
-        # visibility to show BOTH sets — the user already clicked a layer button
-        # so only one set will have been active. Re-clicking the layer button
-        # after changing candidate resets cleanly.
-        args=[{'visible': make_visibility(False, False,
-                                          perf_cand=cand, dist_cand=cand)}],
+        args=[{'visible': make_visibility(False, False, perf_cand=cand)}],
+    ))
+
+# ---- vs District candidate dropdown ----
+dist_dropdown_buttons = []
+for cand in CANDIDATES:
+    dist_dropdown_buttons.append(dict(
+        label=cand,
+        method='update',
+        args=[{'visible': make_visibility(False, False, dist_cand=cand)}],
     ))
 
 updatemenus = [
+    # [0] Main layer toggle
     dict(
         type='buttons', direction='right',
         x=0.5, xanchor='center', y=1.08, yanchor='top',
         buttons=buttons_layer,
         bgcolor='white', bordercolor='#333', font=dict(size=13),
-        name='layer_toggle',
     ),
-]
-if shared_dropdown_buttons:
-    updatemenus.append(dict(
+    # [1] vs Model candidate selector
+    dict(
         type='dropdown',
         x=0.5, xanchor='center', y=1.01, yanchor='top',
-        buttons=shared_dropdown_buttons,
+        buttons=perf_dropdown_buttons,
         bgcolor='rgba(20,20,40,0.95)',
         bordercolor='rgba(255,255,255,0.3)',
         font=dict(size=13, color='white'),
         visible=False,
-        name='cand_selector',
-    ))
+    ),
+    # [2] vs District candidate selector
+    dict(
+        type='dropdown',
+        x=0.5, xanchor='center', y=1.01, yanchor='top',
+        buttons=dist_dropdown_buttons,
+        bgcolor='rgba(20,20,40,0.95)',
+        bordercolor='rgba(255,255,255,0.3)',
+        font=dict(size=13, color='white'),
+        visible=False,
+    ),
+]
 
 fig.update_layout(
     mapbox=dict(
