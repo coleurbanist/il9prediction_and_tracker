@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=0.6">
+    <title>Election Prediction Models</title>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image:
+                repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(255,255,255,.03) 35px, rgba(255,255,255,.03) 70px);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        nav {
+            background-color: rgba(51, 51, 51, 0.95);
+            padding: 15px 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            position: relative;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+
+        .nav-title {
+            color: white;
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-right: 30px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .nav-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: bold;
+            transition: all 0.3s;
+            display: inline-block;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+
+        .nav-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 40px auto;
+            padding: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero-section {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+        }
+
+        .hero-section h1 {
+            color: #333;
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            text-align: center;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 15px;
+        }
+
+        .hero-section p {
+            color: #666;
+            font-size: 1.2rem;
+            line-height: 1.6;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .last-updated {
+            text-align: center;
+            color: #666;
+            font-size: 1rem;
+            margin-bottom: 20px;
+            font-style: italic;
+        }
+
+        .charts-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin: 30px 0;
+        }
+
+        .chart-wrapper {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .chart-title {
+            font-size: 1.3rem;
+            color: #333;
+            margin-bottom: 15px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .view-full-model {
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        .view-full-model a {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 40px;
+            text-decoration: none;
+            border-radius: 30px;
+            font-weight: bold;
+            font-size: 1.2rem;
+            display: inline-block;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+            transition: all 0.3s;
+        }
+
+        .view-full-model a:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+        }
+
+        footer {
+            background-color: rgba(51, 51, 51, 0.95);
+            color: white;
+            text-align: center;
+            padding: 20px;
+            margin-top: 50px;
+            position: relative;
+            z-index: 1;
+            backdrop-filter: blur(10px);
+        }
+
+        @media (max-width: 768px) {
+            .nav-container {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .hero-section h1 {
+                font-size: 1.8rem;
+            }
+
+            .charts-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="nav-container">
+            <div class="nav-title">Cole's Election Models</div>
+            <div class="nav-links">
+                <a href="IL09_precinct_map.html" class="nav-button">IL-09 Model</a>
+                <a href="Chicago Mayor.html" class="nav-button">Chicago Mayoral Races</a>
+                <a href="chicago_ideology_map.html" class="nav-button">Chicago Ideology Map</a>
+                <a href="IL09_actual_results_map.html" class="nav-button">Actual Results</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="hero-section">
+            <h1>IL-09 Democratic Primary Model</h1>
+            <p>
+                Data-driven predictions for Illinois's 9th Congressional District Democratic Primary
+            </p>
+
+            <div class="last-updated" id="lastUpdated">
+                Loading...
+            </div>
+
+            <div class="charts-container">
+                <div class="chart-wrapper">
+                    <div class="chart-title">Win Probabilities</div>
+                    <div id="donutChart"></div>
+                </div>
+
+                <div class="chart-wrapper">
+                    <div class="chart-title">Expected Vote Share</div>
+                    <div id="barChart"></div>
+                </div>
+            </div>
+
+            <div class="view-full-model">
+                <a href="IL09_precinct_map.html">View Full Interactive Model →</a>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>Cole's Election Models</p>
+    </footer>
+
+    <script>
+        fetch('district_win_probabilities.json?v=' + new Date().getTime())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to load data');
+            }
+            return response.json();
+        })
+        .then(modelData => {
+            console.log('Loaded data:', modelData); // Debug log
+
+            const winProbs = modelData.win_probabilities;
+            const voteShares = modelData.median_results;
+            const oldVoteShares = modelData.median_results_old || {};
+            const changes = modelData.changes || {};
+            const lastRun = modelData.last_run || null;
+
+            // Update last run date
+            if (lastRun) {
+                document.getElementById('lastUpdated').textContent = `Last run on ${lastRun}`;
+            } else {
+                document.getElementById('lastUpdated').textContent = 'Run simulation to see last update time';
+            }
+
+            const candidateColors = {
+                'Fine': 'green',
+                'Biss': 'purple',
+                'Abughazaleh': 'orange',
+                'Simmons': 'deeppink',
+                'Amiwala': 'turquoise',
+                'Andrew': 'red',
+                'Huynh': 'gray'
+            };
+
+            const candidates = {};
+            Object.keys(winProbs).forEach(name => {
+                candidates[name] = {
+                    winProb: winProbs[name] || 0,
+                    voteShare: voteShares[name] || 0,
+                    oldVoteShare: oldVoteShares[name] !== undefined ? oldVoteShares[name] : voteShares[name],
+                    winProbChange: (changes[name] && changes[name].win_prob_change) || 0,
+                    voteShareChange: (changes[name] && changes[name].vote_share_change) || 0,
+                    color: candidateColors[name] || 'black'
+                };
+            });
+
+            // DONUT CHART
+            const sortedCandidates = Object.entries(candidates)
+                .sort((a, b) => b[1].winProb - a[1].winProb);
+
+            const donutLabels = sortedCandidates.map(([name, data]) => {
+                const change = data.winProbChange;
+                let changeSymbol = '';
+                if (Math.abs(change) >= 0.1) {
+                    changeSymbol = change > 0 ? ` ↑${change.toFixed(1)}%` : ` ↓${Math.abs(change).toFixed(1)}%`;
+                }
+                return name + changeSymbol;
+            });
+
+            const donutData = [{
+                values: sortedCandidates.map(([n, d]) => d.winProb),
+                labels: donutLabels,
+                type: 'pie',
+                hole: 0.5,
+                marker: {
+                    colors: sortedCandidates.map(([n, d]) => d.color)
+                },
+                textinfo: 'label+percent',
+                textposition: 'outside',
+                hovertemplate: sortedCandidates.map(([name, data]) => {
+                    const changeText = Math.abs(data.winProbChange) >= 0.01
+                        ? `<br>Change: ${data.winProbChange > 0 ? '+' : ''}${data.winProbChange.toFixed(1)}%`
+                        : '';
+                    return `<b>${name}</b><br>Win Probability: %{value:.1f}%${changeText}<extra></extra>`;
+                })
+            }];
+
+            const donutLayout = {
+                showlegend: false,
+                height: 400,
+                margin: { t: 20, b: 20, l: 20, r: 20 },
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                font: { size: 12 }
+            };
+
+            Plotly.newPlot('donutChart', donutData, donutLayout,
+                {responsive: true, displayModeBar: false});
+
+            // BAR CHART
+            const sortedByVote = Object.entries(candidates)
+                .sort((a, b) => b[1].voteShare - a[1].voteShare);
+
+            const barData = [{
+                y: sortedByVote.map(([n]) => n),
+                x: sortedByVote.map(([n, d]) => d.voteShare),
+                type: 'bar',
+                orientation: 'h',
+                marker: {
+                    color: sortedByVote.map(([n, d]) => d.color)
+                },
+                text: sortedByVote.map(([n, d]) =>
+                    d.voteShare.toFixed(1) + '%'
+                ),
+                textposition: 'outside',
+                hovertemplate: sortedByVote.map(([name, data]) => {
+                    const changeText = Math.abs(data.voteShareChange) >= 0.01
+                        ? `<br>Change: ${data.voteShareChange > 0 ? '+' : ''}${data.voteShareChange.toFixed(1)}%`
+                        : '';
+                    return `<b>${name}</b><br>Vote Share: %{x:.1f}%${changeText}<extra></extra>`;
+                }),
+                name: 'Current'
+            }];
+
+            // Add vertical lines for old values
+            const shapes = [];
+            sortedByVote.forEach(([name, data], index) => {
+                if (Math.abs(data.voteShare - data.oldVoteShare) > 0.01) {
+                    shapes.push({
+                        type: 'line',
+                        x0: data.oldVoteShare,
+                        x1: data.oldVoteShare,
+                        y0: index - 0.4,
+                        y1: index + 0.4,
+                        line: {
+                            color: 'black',
+                            width: 3
+                        }
+                    });
+                }
+            });
+
+            const barLayout = {
+                showlegend: false,
+                height: 400,
+                margin: { t: 20, b: 40, l: 100, r: 60 },
+                xaxis: {
+                    title: 'Expected Vote Share (%)',
+                    range: [0,
+                        Math.max(...sortedByVote.map(([n, d]) => d.voteShare)) + 5
+                    ],
+                    gridcolor: '#eee'
+                },
+                yaxis: {
+                    autorange: 'reversed',
+                    gridcolor: '#eee'
+                },
+                shapes: shapes,
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                font: { size: 12 }
+            };
+
+            Plotly.newPlot('barChart', barData, barLayout,
+                {responsive: true, displayModeBar: false});
+
+        })
+        .catch(error => {
+            console.error('Error loading JSON:', error);
+            document.getElementById('lastUpdated').textContent = 'Error loading data - check console';
+
+            // Show error message
+            document.getElementById('donutChart').innerHTML =
+                '<p style="text-align: center; padding: 50px;">Unable to load data. Please ensure district_win_probabilities.json exists in the same directory.</p>';
+            document.getElementById('barChart').innerHTML =
+                '<p style="text-align: center; padding: 50px;">Unable to load data. Please ensure district_win_probabilities.json exists in the same directory.</p>';
+        });
+    </script>
+
+
+
+
+
+<script src="nav.js"></script>
+</body>
+</html>

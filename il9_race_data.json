@@ -1,0 +1,692 @@
+{
+  "election_name": "Illinois US House 9 Democratic Primary",
+  "election_type": "House of Representatives",
+  "election_scope": "Primary",
+  "election_date": "2026-03-17T05:00:00.000Z",
+  "country": "US",
+  "province": "IL",
+  "district": "IL-09",
+  "municipality": null,
+  "polls_open": null,
+  "polls_close": null,
+  "is_disputed": false,
+  "has_map": true,
+  "registered_voters": null,
+  "percent_reporting": 0,
+  "last_updated": "2026-03-11T18:15:33.715Z",
+  "round": 1,
+  "maps": [
+    {
+      "name": "Illinois",
+      "map": "assets/Illinois.svg"
+    }
+  ],
+  "candidates": [
+    {
+      "name": "Bethany Johnson",
+      "party": "Democratic",
+      "incumbent": false,
+      "major_candidate": false,
+      "winner": false,
+      "color": "#4874a3",
+      "votes": 0,
+      "percent": 0
+    },
+    {
+      "name": "Bushra Amiwala",
+      "party": "Democratic",
+      "incumbent": false,
+      "major_candidate": false,
+      "winner": false,
+      "color": "#AA00BB",
+      "votes": 0,
+      "percent": 0
+    },
+    {
+      "name": "Daniel K. Biss",
+      "party": "Democratic",
+      "incumbent": false,
+      "major_candidate": false,
+      "winner": false,
+      "color": "#00b0b0",
+      "votes": 0,
+      "percent": 0
+    },
+    {
+      "name": "Hoan Huynh",
+      "party": "Democratic",
+      "incumbent": false,
+      "major_candidate": false,
+      "winner": false,
+      "color": "#45cd47",
+      "votes": 0,
+      "percent": 0
+    },
+    {
+      "name": "Howard Rosenblum",
+      "party": "Democratic",
+      "incumbent": false,
+      "major_candidate": false,
+      "winner": false,
+      "color": "#2a9bbd",
+      "votes": 0,
+      "percent": 0
+    },
+    {
+      "name": "Jeff Cohen",
+      "party": "Democratic",
+      "incumbent": false,
+      "major_candidate": false,
+      "winner": false,
+      "color": "#002C77",
+      "votes": 0,
+      "percent": 0
+    },
+    {
+      "name": "Justin Ford",
+      "party": "Democratic",
+      "incumbent": false,
+      "major_candidate": false,
+      "winner": false,
+      "color": "#9A36FF",
+      "votes": 0,
+      "percent": 0
+    },
+    {
+      "name": "Kat Abughazaleh",
+      "party": "Democratic",
+      "incumbent": false,
+      "major_candidate": false,
+      "winner": false,
+      "color": "#A25E2E",
+      "votes": 0,
+      "percent": 0
+    },
+    {
+      "name": "Laura Fine",
+      "party": "Democratic",
+      "incumbent": false,
+      "major_candidate": false,
+      "winner": false,
+      "color": "#00b0b0",
+      "votes": 0,
+      "percent": 0
+    },
+    {
+      "name": "Mark Fredrickson",
+      "party": "Democratic",
+      "incumbent": false,
+      "major_candidate": false,
+      "winner": false,
+      "color": "#4874a3",
+      "votes": 0,
+      "percent": 0
+    },
+    {
+      "name": "Mike Simmons",
+      "party": "Democratic",
+      "incumbent": false,
+      "major_candidate": false,
+      "winner": false,
+      "color": "#002C77",
+      "votes": 0,
+      "percent": 0
+    },
+    {
+      "name": "Nick Pyati",
+      "party": "Democratic",
+      "incumbent": false,
+      "major_candidate": false,
+      "winner": false,
+      "color": "#002C77",
+      "votes": 0,
+      "percent": 0
+    },
+    {
+      "name": "Patricia Brown",
+      "party": "Democratic",
+      "incumbent": false,
+      "major_candidate": false,
+      "winner": false,
+      "color": "#002C77",
+      "votes": 0,
+      "percent": 0
+    },
+    {
+      "name": "Phil Andrew",
+      "party": "Democratic",
+      "incumbent": false,
+      "major_candidate": false,
+      "winner": false,
+      "color": "#4874a3",
+      "votes": 0,
+      "percent": 0
+    },
+    {
+      "name": "Sam Polan",
+      "party": "Democratic",
+      "incumbent": false,
+      "major_candidate": false,
+      "winner": false,
+      "color": "#45cd47",
+      "votes": 0,
+      "percent": 0
+    },
+    {
+      "name": "Write-in",
+      "party": "Democratic",
+      "incumbent": false,
+      "major_candidate": false,
+      "winner": false,
+      "color": "#002C77",
+      "votes": 0,
+      "percent": 0
+    }
+  ],
+  "region_results": {
+    "cook": {
+      "name": "Cook",
+      "type": "County",
+      "fill": "#404040",
+      "percent_reporting": 0,
+      "candidates": [
+        {
+          "name": "Bethany Johnson",
+          "party": "Democratic",
+          "votes": 0,
+          "percent": 0,
+          "color": "#4874a3",
+          "winner": false,
+          "incumbent": false,
+          "major_candidate": false
+        },
+        {
+          "name": "Bushra Amiwala",
+          "party": "Democratic",
+          "votes": 0,
+          "percent": 0,
+          "color": "#AA00BB",
+          "winner": false,
+          "incumbent": false,
+          "major_candidate": false
+        },
+        {
+          "name": "Daniel K. Biss",
+          "party": "Democratic",
+          "votes": 0,
+          "percent": 0,
+          "color": "#00b0b0",
+          "winner": false,
+          "incumbent": false,
+          "major_candidate": false
+        },
+        {
+          "name": "Hoan Huynh",
+          "party": "Democratic",
+          "votes": 0,
+          "percent": 0,
+          "color": "#45cd47",
+          "winner": false,
+          "incumbent": false,
+          "major_candidate": false
+        },
+        {
+          "name": "Howard Rosenblum",
+          "party": "Democratic",
+          "votes": 0,
+          "percent": 0,
+          "color": "#2a9bbd",
+          "winner": false,
+          "incumbent": false,
+          "major_candidate": false
+        },
+        {
+          "name": "Jeff Cohen",
+          "party": "Democratic",
+          "votes": 0,
+          "percent": 0,
+          "color": "#002C77",
+          "winner": false,
+          "incumbent": false,
+          "major_candidate": false
+        },
+        {
+          "name": "Justin Ford",
+          "party": "Democratic",
+          "votes": 0,
+          "percent": 0,
+          "color": "#9A36FF",
+          "winner": false,
+          "incumbent": false,
+          "major_candidate": false
+        },
+        {
+          "name": "Kat Abughazaleh",
+          "party": "Democratic",
+          "votes": 0,
+          "percent": 0,
+          "color": "#A25E2E",
+          "winner": false,
+          "incumbent": false,
+          "major_candidate": false
+        },
+        {
+          "name": "Laura Fine",
+          "party": "Democratic",
+          "votes": 0,
+          "percent": 0,
+          "color": "#00b0b0",
+          "winner": false,
+          "incumbent": false,
+          "major_candidate": false
+        },
+        {
+          "name": "Mark Fredrickson",
+          "party": "Democratic",
+          "votes": 0,
+          "percent": 0,
+          "color": "#4874a3",
+          "winner": false,
+          "incumbent": false,
+          "major_candidate": false
+        },
+        {
+          "name": "Mike Simmons",
+          "party": "Democratic",
+          "votes": 0,
+          "percent": 0,
+          "color": "#002C77",
+          "winner": false,
+          "incumbent": false,
+          "major_candidate": false
+        },
+        {
+          "name": "Nick Pyati",
+          "party": "Democratic",
+          "votes": 0,
+          "percent": 0,
+          "color": "#002C77",
+          "winner": false,
+          "incumbent": false,
+          "major_candidate": false
+        },
+        {
+          "name": "Patricia Brown",
+          "party": "Democratic",
+          "votes": 0,
+          "percent": 0,
+          "color": "#002C77",
+          "winner": false,
+          "incumbent": false,
+          "major_candidate": false
+        },
+        {
+          "name": "Phil Andrew",
+          "party": "Democratic",
+          "votes": 0,
+          "percent": 0,
+          "color": "#4874a3",
+          "winner": false,
+          "incumbent": false,
+          "major_candidate": false
+        },
+        {
+          "name": "Sam Polan",
+          "party": "Democratic",
+          "votes": 0,
+          "percent": 0,
+          "color": "#45cd47",
+          "winner": false,
+          "incumbent": false,
+          "major_candidate": false
+        },
+        {
+          "name": "Write-in",
+          "party": "Democratic",
+          "votes": 0,
+          "percent": 0,
+          "color": "#002C77",
+          "winner": false,
+          "incumbent": false,
+          "major_candidate": false
+        }
+      ]
+    },
+    "lake": {
+      "name": "Lake",
+      "type": "County",
+      "fill": "#404040",
+      "percent_reporting": 0,
+      "candidates": [
+        {
+          "name": "Bethany Johnson",
+          "party": "Democratic",
+          "votes": 0,
+          "percent": 0,
+          "color": "#4874a3",
+          "winner": false,
+          "incumbent": false,
+          "major_candidate": false
+        },
+        {
+          "name": "Bushra Amiwala",
+          "party": "Democratic",
+          "votes": 0,
+          "percent": 0,
+          "color": "#AA00BB",
+          "winner": false,
+          "incumbent": false,
+          "major_candidate": false
+        },
+        {
+          "name": "Daniel K. Biss",
+          "party": "Democratic",
+          "votes": 0,
+          "percent": 0,
+          "color": "#00b0b0",
+          "winner": false,
+          "incumbent": false,
+          "major_candidate": false
+        },
+        {
+          "name": "Hoan Huynh",
+          "party": "Democratic",
+          "votes": 0,
+          "percent": 0,
+          "color": "#45cd47",
+          "winner": false,
+          "incumbent": false,
+          "major_candidate": false
+        },
+        {
+          "name": "Howard Rosenblum",
+          "party": "Democratic",
+          "votes": 0,
+          "percent": 0,
+          "color": "#2a9bbd",
+          "winner": false,
+          "incumbent": false,
+          "major_candidate": false
+        },
+        {
+          "name": "Jeff Cohen",
+          "party": "Democratic",
+          "votes": 0,
+          "percent": 0,
+          "color": "#002C77",
+          "winner": false,
+          "incumbent": false,
+          "major_candidate": false
+        },
+        {
+          "name": "Justin Ford",
+          "party": "Democratic",
+          "votes": 0,
+          "percent": 0,
+          "color": "#9A36FF",
+          "winner": false,
+          "incumbent": false,
+          "major_candidate": false
+        },
+        {
+          "name": "Kat Abughazaleh",
+          "party": "Democratic",
+          "votes": 0,
+          "percent": 0,
+          "color": "#A25E2E",
+          "winner": false,
+          "incumbent": false,
+          "major_candidate": false
+        },
+        {
+          "name": "Laura Fine",
+          "party": "Democratic",
+          "votes": 0,
+          "percent": 0,
+          "color": "#00b0b0",
+          "winner": false,
+          "incumbent": false,
+          "major_candidate": false
+        },
+        {
+          "name": "Mark Fredrickson",
+          "party": "Democratic",
+          "votes": 0,
+          "percent": 0,
+          "color": "#4874a3",
+          "winner": false,
+          "incumbent": false,
+          "major_candidate": false
+        },
+        {
+          "name": "Mike Simmons",
+          "party": "Democratic",
+          "votes": 0,
+          "percent": 0,
+          "color": "#002C77",
+          "winner": false,
+          "incumbent": false,
+          "major_candidate": false
+        },
+        {
+          "name": "Nick Pyati",
+          "party": "Democratic",
+          "votes": 0,
+          "percent": 0,
+          "color": "#002C77",
+          "winner": false,
+          "incumbent": false,
+          "major_candidate": false
+        },
+        {
+          "name": "Patricia Brown",
+          "party": "Democratic",
+          "votes": 0,
+          "percent": 0,
+          "color": "#002C77",
+          "winner": false,
+          "incumbent": false,
+          "major_candidate": false
+        },
+        {
+          "name": "Phil Andrew",
+          "party": "Democratic",
+          "votes": 0,
+          "percent": 0,
+          "color": "#4874a3",
+          "winner": false,
+          "incumbent": false,
+          "major_candidate": false
+        },
+        {
+          "name": "Sam Polan",
+          "party": "Democratic",
+          "votes": 0,
+          "percent": 0,
+          "color": "#45cd47",
+          "winner": false,
+          "incumbent": false,
+          "major_candidate": false
+        },
+        {
+          "name": "Write-in",
+          "party": "Democratic",
+          "votes": 0,
+          "percent": 0,
+          "color": "#002C77",
+          "winner": false,
+          "incumbent": false,
+          "major_candidate": false
+        }
+      ]
+    },
+    "mchenry": {
+      "name": "McHenry",
+      "type": "County",
+      "fill": "#404040",
+      "percent_reporting": 0,
+      "candidates": [
+        {
+          "name": "Bethany Johnson",
+          "party": "Democratic",
+          "votes": 0,
+          "percent": 0,
+          "color": "#4874a3",
+          "winner": false,
+          "incumbent": false,
+          "major_candidate": false
+        },
+        {
+          "name": "Bushra Amiwala",
+          "party": "Democratic",
+          "votes": 0,
+          "percent": 0,
+          "color": "#AA00BB",
+          "winner": false,
+          "incumbent": false,
+          "major_candidate": false
+        },
+        {
+          "name": "Daniel K. Biss",
+          "party": "Democratic",
+          "votes": 0,
+          "percent": 0,
+          "color": "#00b0b0",
+          "winner": false,
+          "incumbent": false,
+          "major_candidate": false
+        },
+        {
+          "name": "Hoan Huynh",
+          "party": "Democratic",
+          "votes": 0,
+          "percent": 0,
+          "color": "#45cd47",
+          "winner": false,
+          "incumbent": false,
+          "major_candidate": false
+        },
+        {
+          "name": "Howard Rosenblum",
+          "party": "Democratic",
+          "votes": 0,
+          "percent": 0,
+          "color": "#2a9bbd",
+          "winner": false,
+          "incumbent": false,
+          "major_candidate": false
+        },
+        {
+          "name": "Jeff Cohen",
+          "party": "Democratic",
+          "votes": 0,
+          "percent": 0,
+          "color": "#002C77",
+          "winner": false,
+          "incumbent": false,
+          "major_candidate": false
+        },
+        {
+          "name": "Justin Ford",
+          "party": "Democratic",
+          "votes": 0,
+          "percent": 0,
+          "color": "#9A36FF",
+          "winner": false,
+          "incumbent": false,
+          "major_candidate": false
+        },
+        {
+          "name": "Kat Abughazaleh",
+          "party": "Democratic",
+          "votes": 0,
+          "percent": 0,
+          "color": "#A25E2E",
+          "winner": false,
+          "incumbent": false,
+          "major_candidate": false
+        },
+        {
+          "name": "Laura Fine",
+          "party": "Democratic",
+          "votes": 0,
+          "percent": 0,
+          "color": "#00b0b0",
+          "winner": false,
+          "incumbent": false,
+          "major_candidate": false
+        },
+        {
+          "name": "Mark Fredrickson",
+          "party": "Democratic",
+          "votes": 0,
+          "percent": 0,
+          "color": "#4874a3",
+          "winner": false,
+          "incumbent": false,
+          "major_candidate": false
+        },
+        {
+          "name": "Mike Simmons",
+          "party": "Democratic",
+          "votes": 0,
+          "percent": 0,
+          "color": "#002C77",
+          "winner": false,
+          "incumbent": false,
+          "major_candidate": false
+        },
+        {
+          "name": "Nick Pyati",
+          "party": "Democratic",
+          "votes": 0,
+          "percent": 0,
+          "color": "#002C77",
+          "winner": false,
+          "incumbent": false,
+          "major_candidate": false
+        },
+        {
+          "name": "Patricia Brown",
+          "party": "Democratic",
+          "votes": 0,
+          "percent": 0,
+          "color": "#002C77",
+          "winner": false,
+          "incumbent": false,
+          "major_candidate": false
+        },
+        {
+          "name": "Phil Andrew",
+          "party": "Democratic",
+          "votes": 0,
+          "percent": 0,
+          "color": "#4874a3",
+          "winner": false,
+          "incumbent": false,
+          "major_candidate": false
+        },
+        {
+          "name": "Sam Polan",
+          "party": "Democratic",
+          "votes": 0,
+          "percent": 0,
+          "color": "#45cd47",
+          "winner": false,
+          "incumbent": false,
+          "major_candidate": false
+        },
+        {
+          "name": "Write-in",
+          "party": "Democratic",
+          "votes": 0,
+          "percent": 0,
+          "color": "#002C77",
+          "winner": false,
+          "incumbent": false,
+          "major_candidate": false
+        }
+      ]
+    }
+  }
+}

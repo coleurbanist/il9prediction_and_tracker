@@ -1,0 +1,195 @@
+{
+  "generated_at": "2026-03-14T21:15:34.129843",
+  "n_simulations": 1000000,
+  "scenarios": {
+    "Fine": {
+      "n_winning_sims": 77048,
+      "median_win": {
+        "vote_shares": {
+          "Fine": 28.505,
+          "Biss": 21.417,
+          "Abughazaleh": 20.589,
+          "Simmons": 11.33,
+          "Amiwala": 7.794,
+          "Andrew": 8.003,
+          "Huynh": 2.363
+        },
+        "winner_margin": 7.088
+      },
+      "closest_win": {
+        "vote_shares": {
+          "Fine": 28.865,
+          "Biss": 14.541,
+          "Abughazaleh": 28.865,
+          "Simmons": 0.705,
+          "Amiwala": 12.157,
+          "Andrew": 8.95,
+          "Huynh": 5.916
+        },
+        "winner_margin": 0.0
+      }
+    },
+    "Biss": {
+      "n_winning_sims": 657618,
+      "median_win": {
+        "vote_shares": {
+          "Fine": 17.017,
+          "Biss": 33.386,
+          "Abughazaleh": 22.016,
+          "Simmons": 10.601,
+          "Amiwala": 7.032,
+          "Andrew": 7.817,
+          "Huynh": 2.131
+        },
+        "winner_margin": 11.37
+      },
+      "closest_win": {
+        "vote_shares": {
+          "Fine": 21.446,
+          "Biss": 25.567,
+          "Abughazaleh": 25.567,
+          "Simmons": 0.628,
+          "Amiwala": 10.949,
+          "Andrew": 10.084,
+          "Huynh": 5.759
+        },
+        "winner_margin": 0.0
+      }
+    },
+    "Abughazaleh": {
+      "n_winning_sims": 249267,
+      "median_win": {
+        "vote_shares": {
+          "Fine": 18.098,
+          "Biss": 23.186,
+          "Abughazaleh": 30.732,
+          "Simmons": 10.838,
+          "Amiwala": 6.813,
+          "Andrew": 8.143,
+          "Huynh": 2.188
+        },
+        "winner_margin": 7.546
+      },
+      "closest_win": {
+        "vote_shares": {
+          "Fine": 16.711,
+          "Biss": 38.609,
+          "Abughazaleh": 38.609,
+          "Simmons": 3.095,
+          "Amiwala": 0.751,
+          "Andrew": 2.026,
+          "Huynh": 0.2
+        },
+        "winner_margin": 0.0
+      }
+    },
+    "Simmons": {
+      "n_winning_sims": 10194,
+      "median_win": {
+        "vote_shares": {
+          "Fine": 16.798,
+          "Biss": 20.196,
+          "Abughazaleh": 18.134,
+          "Simmons": 26.163,
+          "Amiwala": 7.84,
+          "Andrew": 8.474,
+          "Huynh": 2.395
+        },
+        "winner_margin": 5.967
+      },
+      "closest_win": {
+        "vote_shares": {
+          "Fine": 24.523,
+          "Biss": 16.428,
+          "Abughazaleh": 24.046,
+          "Simmons": 24.523,
+          "Amiwala": 8.586,
+          "Andrew": 1.549,
+          "Huynh": 0.346
+        },
+        "winner_margin": 0.0
+      }
+    },
+    "Amiwala": {
+      "n_winning_sims": 2637,
+      "median_win": {
+        "vote_shares": {
+          "Fine": 16.155,
+          "Biss": 19.642,
+          "Abughazaleh": 16.378,
+          "Simmons": 11.132,
+          "Amiwala": 24.975,
+          "Andrew": 8.92,
+          "Huynh": 2.799
+        },
+        "winner_margin": 5.333
+      },
+      "closest_win": {
+        "vote_shares": {
+          "Fine": 21.812,
+          "Biss": 15.797,
+          "Abughazaleh": 20.879,
+          "Simmons": 12.648,
+          "Amiwala": 21.812,
+          "Andrew": 6.933,
+          "Huynh": 0.119
+        },
+        "winner_margin": 0.0
+      }
+    },
+    "Andrew": {
+      "n_winning_sims": 3020,
+      "median_win": {
+        "vote_shares": {
+          "Fine": 15.707,
+          "Biss": 19.638,
+          "Abughazaleh": 17.737,
+          "Simmons": 11.186,
+          "Amiwala": 7.979,
+          "Andrew": 24.988,
+          "Huynh": 2.764
+        },
+        "winner_margin": 5.35
+      },
+      "closest_win": {
+        "vote_shares": {
+          "Fine": 16.774,
+          "Biss": 20.177,
+          "Abughazaleh": 23.038,
+          "Simmons": 11.28,
+          "Amiwala": 0.88,
+          "Andrew": 23.038,
+          "Huynh": 4.813
+        },
+        "winner_margin": 0.0
+      }
+    },
+    "Huynh": {
+      "n_winning_sims": 211,
+      "median_win": {
+        "vote_shares": {
+          "Fine": 14.827,
+          "Biss": 17.54,
+          "Abughazaleh": 16.388,
+          "Simmons": 10.612,
+          "Amiwala": 8.448,
+          "Andrew": 9.438,
+          "Huynh": 22.747
+        },
+        "winner_margin": 5.207
+      },
+      "closest_win": {
+        "vote_shares": {
+          "Fine": 19.828,
+          "Biss": 23.032,
+          "Abughazaleh": 10.467,
+          "Simmons": 1.24,
+          "Amiwala": 11.419,
+          "Andrew": 10.964,
+          "Huynh": 23.051
+        },
+        "winner_margin": 0.019
+      }
+    }
+  }
+}

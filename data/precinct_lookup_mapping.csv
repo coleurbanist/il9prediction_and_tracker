@@ -1,0 +1,784 @@
+2024_ID,Status,Transitions,new_id
+CITY OF CHICAGO:Ward 39 Precinct 12,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 50 Precinct 24', 'pct': 54.36}",CITY OF CHICAGO:Ward 50 Precinct 24
+CITY OF CHICAGO:Ward 39 Precinct 12,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 50 Precinct 25', 'pct': 23.75}",CITY OF CHICAGO:Ward 50 Precinct 25
+CITY OF CHICAGO:Ward 39 Precinct 12,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 50 Precinct 25', 'pct': 8.38}",CITY OF CHICAGO:Ward 50 Precinct 25
+CITY OF CHICAGO:Ward 39 Precinct 12,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 39 Precinct 12', 'pct': 7.87}",CITY OF CHICAGO:Ward 39 Precinct 12
+CITY OF CHICAGO:Ward 39 Precinct 12,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 50 Precinct 25', 'pct': 5.3}",CITY OF CHICAGO:Ward 50 Precinct 25
+CITY OF CHICAGO:Ward 39 Precinct 14,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 39 Precinct 14', 'pct': 100.0}",CITY OF CHICAGO:Ward 39 Precinct 14
+CITY OF CHICAGO:Ward 39 Precinct 15,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 50 Precinct 24', 'pct': 100.0}",CITY OF CHICAGO:Ward 50 Precinct 24
+CITY OF CHICAGO:Ward 39 Precinct 34,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 45 Precinct 05', 'pct': 100.0}",CITY OF CHICAGO:Ward 45 Precinct 05
+CITY OF CHICAGO:Ward 40 Precinct 01,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 40 Precinct 01', 'pct': 99.91}",CITY OF CHICAGO:Ward 40 Precinct 01
+CITY OF CHICAGO:Ward 40 Precinct 02,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 40 Precinct 02', 'pct': 99.93}",CITY OF CHICAGO:Ward 40 Precinct 02
+CITY OF CHICAGO:Ward 40 Precinct 03,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 40 Precinct 03', 'pct': 99.94}",CITY OF CHICAGO:Ward 40 Precinct 03
+CITY OF CHICAGO:Ward 40 Precinct 04,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 40 Precinct 04', 'pct': 99.87}",CITY OF CHICAGO:Ward 40 Precinct 04
+CITY OF CHICAGO:Ward 40 Precinct 05,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 40 Precinct 05', 'pct': 99.94}",CITY OF CHICAGO:Ward 40 Precinct 05
+CITY OF CHICAGO:Ward 40 Precinct 06,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 40 Precinct 06', 'pct': 99.94}",CITY OF CHICAGO:Ward 40 Precinct 06
+CITY OF CHICAGO:Ward 40 Precinct 07,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 40 Precinct 07', 'pct': 99.93}",CITY OF CHICAGO:Ward 40 Precinct 07
+CITY OF CHICAGO:Ward 40 Precinct 08,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 40 Precinct 05', 'pct': 100.0}",CITY OF CHICAGO:Ward 40 Precinct 05
+CITY OF CHICAGO:Ward 40 Precinct 09,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 40 Precinct 14', 'pct': 29.76}",CITY OF CHICAGO:Ward 40 Precinct 14
+CITY OF CHICAGO:Ward 40 Precinct 09,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 40 Precinct 05', 'pct': 26.35}",CITY OF CHICAGO:Ward 40 Precinct 05
+CITY OF CHICAGO:Ward 40 Precinct 09,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 40 Precinct 06', 'pct': 20.34}",CITY OF CHICAGO:Ward 40 Precinct 06
+CITY OF CHICAGO:Ward 40 Precinct 09,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 40 Precinct 10', 'pct': 14.89}",CITY OF CHICAGO:Ward 40 Precinct 10
+CITY OF CHICAGO:Ward 40 Precinct 09,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 40 Precinct 06', 'pct': 7.15}",CITY OF CHICAGO:Ward 40 Precinct 06
+CITY OF CHICAGO:Ward 40 Precinct 10,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 40 Precinct 10', 'pct': 99.95}",CITY OF CHICAGO:Ward 40 Precinct 10
+CITY OF CHICAGO:Ward 40 Precinct 12,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 40 Precinct 12', 'pct': 31.83}",CITY OF CHICAGO:Ward 40 Precinct 12
+CITY OF CHICAGO:Ward 40 Precinct 12,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 40 Precinct 12', 'pct': 29.55}",CITY OF CHICAGO:Ward 40 Precinct 12
+CITY OF CHICAGO:Ward 40 Precinct 12,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 40 Precinct 12', 'pct': 7.64}",CITY OF CHICAGO:Ward 40 Precinct 12
+CITY OF CHICAGO:Ward 40 Precinct 12,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 40 Precinct 12', 'pct': 6.65}",CITY OF CHICAGO:Ward 40 Precinct 12
+CITY OF CHICAGO:Ward 40 Precinct 12,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 40 Precinct 19', 'pct': 4.81}",CITY OF CHICAGO:Ward 40 Precinct 19
+CITY OF CHICAGO:Ward 40 Precinct 12,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 40 Precinct 20', 'pct': 4.14}",CITY OF CHICAGO:Ward 40 Precinct 20
+CITY OF CHICAGO:Ward 40 Precinct 12,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 40 Precinct 20', 'pct': 3.49}",CITY OF CHICAGO:Ward 40 Precinct 20
+CITY OF CHICAGO:Ward 40 Precinct 12,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 40 Precinct 12', 'pct': 3.0}",CITY OF CHICAGO:Ward 40 Precinct 12
+CITY OF CHICAGO:Ward 40 Precinct 12,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 40 Precinct 12', 'pct': 2.9}",CITY OF CHICAGO:Ward 40 Precinct 12
+CITY OF CHICAGO:Ward 40 Precinct 12,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 40 Precinct 20', 'pct': 2.9}",CITY OF CHICAGO:Ward 40 Precinct 20
+CITY OF CHICAGO:Ward 40 Precinct 12,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 40 Precinct 20', 'pct': 2.27}",CITY OF CHICAGO:Ward 40 Precinct 20
+CITY OF CHICAGO:Ward 40 Precinct 13,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 40 Precinct 20', 'pct': 45.69}",CITY OF CHICAGO:Ward 40 Precinct 20
+CITY OF CHICAGO:Ward 40 Precinct 13,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 40 Precinct 14', 'pct': 26.78}",CITY OF CHICAGO:Ward 40 Precinct 14
+CITY OF CHICAGO:Ward 40 Precinct 13,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 40 Precinct 14', 'pct': 14.14}",CITY OF CHICAGO:Ward 40 Precinct 14
+CITY OF CHICAGO:Ward 40 Precinct 13,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 40 Precinct 14', 'pct': 8.54}",CITY OF CHICAGO:Ward 40 Precinct 14
+CITY OF CHICAGO:Ward 40 Precinct 13,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 40 Precinct 20', 'pct': 4.85}",CITY OF CHICAGO:Ward 40 Precinct 20
+CITY OF CHICAGO:Ward 40 Precinct 14,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 40 Precinct 14', 'pct': 99.94}",CITY OF CHICAGO:Ward 40 Precinct 14
+CITY OF CHICAGO:Ward 40 Precinct 15,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 40 Precinct 15', 'pct': 99.92}",CITY OF CHICAGO:Ward 40 Precinct 15
+CITY OF CHICAGO:Ward 40 Precinct 16,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 40 Precinct 16', 'pct': 99.89}",CITY OF CHICAGO:Ward 40 Precinct 16
+CITY OF CHICAGO:Ward 40 Precinct 19,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 40 Precinct 19', 'pct': 99.95}",CITY OF CHICAGO:Ward 40 Precinct 19
+CITY OF CHICAGO:Ward 40 Precinct 20,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 40 Precinct 20', 'pct': 99.94}",CITY OF CHICAGO:Ward 40 Precinct 20
+CITY OF CHICAGO:Ward 40 Precinct 21,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 40 Precinct 21', 'pct': 99.91}",CITY OF CHICAGO:Ward 40 Precinct 21
+CITY OF CHICAGO:Ward 41 Precinct 24,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 41 Precinct 24', 'pct': 100.0}",CITY OF CHICAGO:Ward 41 Precinct 24
+CITY OF CHICAGO:Ward 41 Precinct 26,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 41 Precinct 29', 'pct': 46.32}",CITY OF CHICAGO:Ward 41 Precinct 29
+CITY OF CHICAGO:Ward 41 Precinct 26,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 41 Precinct 29', 'pct': 28.85}",CITY OF CHICAGO:Ward 41 Precinct 29
+CITY OF CHICAGO:Ward 41 Precinct 26,SPLIT,"{'new_id': 'COOK:8200009', 'pct': 14.66}",COOK:8200009
+CITY OF CHICAGO:Ward 41 Precinct 26,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 41 Precinct 29', 'pct': 4.19}",CITY OF CHICAGO:Ward 41 Precinct 29
+CITY OF CHICAGO:Ward 41 Precinct 26,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 41 Precinct 29', 'pct': 3.83}",CITY OF CHICAGO:Ward 41 Precinct 29
+CITY OF CHICAGO:Ward 41 Precinct 26,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 41 Precinct 29', 'pct': 2.16}",CITY OF CHICAGO:Ward 41 Precinct 29
+CITY OF CHICAGO:Ward 41 Precinct 28,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 41 Precinct 29', 'pct': 63.97}",CITY OF CHICAGO:Ward 41 Precinct 29
+CITY OF CHICAGO:Ward 41 Precinct 28,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 41 Precinct 31', 'pct': 18.98}",CITY OF CHICAGO:Ward 41 Precinct 31
+CITY OF CHICAGO:Ward 41 Precinct 28,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 41 Precinct 29', 'pct': 7.49}",CITY OF CHICAGO:Ward 41 Precinct 29
+CITY OF CHICAGO:Ward 41 Precinct 28,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 41 Precinct 29', 'pct': 4.64}",CITY OF CHICAGO:Ward 41 Precinct 29
+CITY OF CHICAGO:Ward 41 Precinct 28,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 41 Precinct 29', 'pct': 3.68}",CITY OF CHICAGO:Ward 41 Precinct 29
+CITY OF CHICAGO:Ward 41 Precinct 29,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 41 Precinct 29', 'pct': 99.98}",CITY OF CHICAGO:Ward 41 Precinct 29
+CITY OF CHICAGO:Ward 41 Precinct 30,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 41 Precinct 30', 'pct': 99.96}",CITY OF CHICAGO:Ward 41 Precinct 30
+CITY OF CHICAGO:Ward 41 Precinct 31,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 41 Precinct 31', 'pct': 99.98}",CITY OF CHICAGO:Ward 41 Precinct 31
+CITY OF CHICAGO:Ward 44 Precinct 19,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 46 Precinct 10', 'pct': 43.55}",CITY OF CHICAGO:Ward 46 Precinct 10
+CITY OF CHICAGO:Ward 44 Precinct 19,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 46 Precinct 08', 'pct': 24.9}",CITY OF CHICAGO:Ward 46 Precinct 08
+CITY OF CHICAGO:Ward 44 Precinct 19,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 46 Precinct 08', 'pct': 23.73}",CITY OF CHICAGO:Ward 46 Precinct 08
+CITY OF CHICAGO:Ward 44 Precinct 19,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 46 Precinct 08', 'pct': 5.31}",CITY OF CHICAGO:Ward 46 Precinct 08
+CITY OF CHICAGO:Ward 44 Precinct 19,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 46 Precinct 08', 'pct': 2.51}",CITY OF CHICAGO:Ward 46 Precinct 08
+CITY OF CHICAGO:Ward 45 Precinct 01,SPLIT,"{'new_id': 'COOK:8200001', 'pct': 52.7}",COOK:8200001
+CITY OF CHICAGO:Ward 45 Precinct 01,SPLIT,"{'new_id': 'COOK:8200002', 'pct': 46.87}",COOK:8200002
+CITY OF CHICAGO:Ward 45 Precinct 03,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 45 Precinct 03', 'pct': 21.37}",CITY OF CHICAGO:Ward 45 Precinct 03
+CITY OF CHICAGO:Ward 45 Precinct 03,SPLIT,"{'new_id': 'COOK:8200026', 'pct': 21.18}",COOK:8200026
+CITY OF CHICAGO:Ward 45 Precinct 03,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 45 Precinct 03', 'pct': 13.05}",CITY OF CHICAGO:Ward 45 Precinct 03
+CITY OF CHICAGO:Ward 45 Precinct 03,SPLIT,"{'new_id': 'COOK:8200006', 'pct': 11.8}",COOK:8200006
+CITY OF CHICAGO:Ward 45 Precinct 03,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 45 Precinct 03', 'pct': 11.8}",CITY OF CHICAGO:Ward 45 Precinct 03
+CITY OF CHICAGO:Ward 45 Precinct 03,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 45 Precinct 03', 'pct': 7.39}",CITY OF CHICAGO:Ward 45 Precinct 03
+CITY OF CHICAGO:Ward 45 Precinct 03,SPLIT,"{'new_id': 'COOK:8200026', 'pct': 7.39}",COOK:8200026
+CITY OF CHICAGO:Ward 45 Precinct 03,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 45 Precinct 03', 'pct': 2.86}",CITY OF CHICAGO:Ward 45 Precinct 03
+CITY OF CHICAGO:Ward 45 Precinct 03,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 45 Precinct 03', 'pct': 2.86}",CITY OF CHICAGO:Ward 45 Precinct 03
+CITY OF CHICAGO:Ward 45 Precinct 05,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 45 Precinct 05', 'pct': 46.92}",CITY OF CHICAGO:Ward 45 Precinct 05
+CITY OF CHICAGO:Ward 45 Precinct 05,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 45 Precinct 05', 'pct': 28.64}",CITY OF CHICAGO:Ward 45 Precinct 05
+CITY OF CHICAGO:Ward 45 Precinct 05,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 45 Precinct 05', 'pct': 10.58}",CITY OF CHICAGO:Ward 45 Precinct 05
+CITY OF CHICAGO:Ward 45 Precinct 05,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 45 Precinct 05', 'pct': 7.03}",CITY OF CHICAGO:Ward 45 Precinct 05
+CITY OF CHICAGO:Ward 45 Precinct 05,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 45 Precinct 05', 'pct': 4.11}",CITY OF CHICAGO:Ward 45 Precinct 05
+CITY OF CHICAGO:Ward 46 Precinct 03,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 46 Precinct 06', 'pct': 99.92}",CITY OF CHICAGO:Ward 46 Precinct 06
+CITY OF CHICAGO:Ward 46 Precinct 05,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 46 Precinct 05', 'pct': 39.64}",CITY OF CHICAGO:Ward 46 Precinct 05
+CITY OF CHICAGO:Ward 46 Precinct 05,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 46 Precinct 05', 'pct': 38.6}",CITY OF CHICAGO:Ward 46 Precinct 05
+CITY OF CHICAGO:Ward 46 Precinct 05,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 46 Precinct 06', 'pct': 9.53}",CITY OF CHICAGO:Ward 46 Precinct 06
+CITY OF CHICAGO:Ward 46 Precinct 05,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 46 Precinct 12', 'pct': 3.13}",CITY OF CHICAGO:Ward 46 Precinct 12
+CITY OF CHICAGO:Ward 46 Precinct 05,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 46 Precinct 06', 'pct': 2.37}",CITY OF CHICAGO:Ward 46 Precinct 06
+CITY OF CHICAGO:Ward 46 Precinct 05,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 46 Precinct 05', 'pct': 2.14}",CITY OF CHICAGO:Ward 46 Precinct 05
+CITY OF CHICAGO:Ward 46 Precinct 06,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 46 Precinct 06', 'pct': 99.9}",CITY OF CHICAGO:Ward 46 Precinct 06
+CITY OF CHICAGO:Ward 46 Precinct 07,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 46 Precinct 07', 'pct': 99.92}",CITY OF CHICAGO:Ward 46 Precinct 07
+CITY OF CHICAGO:Ward 46 Precinct 08,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 46 Precinct 08', 'pct': 99.98}",CITY OF CHICAGO:Ward 46 Precinct 08
+CITY OF CHICAGO:Ward 46 Precinct 09,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 46 Precinct 10', 'pct': 95.74}",CITY OF CHICAGO:Ward 46 Precinct 10
+CITY OF CHICAGO:Ward 46 Precinct 09,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 46 Precinct 10', 'pct': 4.26}",CITY OF CHICAGO:Ward 46 Precinct 10
+CITY OF CHICAGO:Ward 46 Precinct 10,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 46 Precinct 10', 'pct': 99.96}",CITY OF CHICAGO:Ward 46 Precinct 10
+CITY OF CHICAGO:Ward 46 Precinct 11,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 46 Precinct 11', 'pct': 99.87}",CITY OF CHICAGO:Ward 46 Precinct 11
+CITY OF CHICAGO:Ward 46 Precinct 12,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 46 Precinct 12', 'pct': 99.86}",CITY OF CHICAGO:Ward 46 Precinct 12
+CITY OF CHICAGO:Ward 46 Precinct 13,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 46 Precinct 13', 'pct': 99.89}",CITY OF CHICAGO:Ward 46 Precinct 13
+CITY OF CHICAGO:Ward 46 Precinct 14,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 46 Precinct 14', 'pct': 99.73}",CITY OF CHICAGO:Ward 46 Precinct 14
+CITY OF CHICAGO:Ward 46 Precinct 15,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 46 Precinct 15', 'pct': 99.85}",CITY OF CHICAGO:Ward 46 Precinct 15
+CITY OF CHICAGO:Ward 46 Precinct 16,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 46 Precinct 16', 'pct': 99.97}",CITY OF CHICAGO:Ward 46 Precinct 16
+CITY OF CHICAGO:Ward 46 Precinct 17,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 46 Precinct 17', 'pct': 99.92}",CITY OF CHICAGO:Ward 46 Precinct 17
+CITY OF CHICAGO:Ward 46 Precinct 18,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 46 Precinct 18', 'pct': 99.93}",CITY OF CHICAGO:Ward 46 Precinct 18
+CITY OF CHICAGO:Ward 46 Precinct 19,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 46 Precinct 19', 'pct': 99.9}",CITY OF CHICAGO:Ward 46 Precinct 19
+CITY OF CHICAGO:Ward 46 Precinct 20,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 46 Precinct 20', 'pct': 99.89}",CITY OF CHICAGO:Ward 46 Precinct 20
+CITY OF CHICAGO:Ward 46 Precinct 21,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 46 Precinct 21', 'pct': 99.88}",CITY OF CHICAGO:Ward 46 Precinct 21
+CITY OF CHICAGO:Ward 46 Precinct 22,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 46 Precinct 22', 'pct': 99.91}",CITY OF CHICAGO:Ward 46 Precinct 22
+CITY OF CHICAGO:Ward 46 Precinct 23,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 46 Precinct 23', 'pct': 99.91}",CITY OF CHICAGO:Ward 46 Precinct 23
+CITY OF CHICAGO:Ward 47 Precinct 01,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 40 Precinct 20', 'pct': 62.88}",CITY OF CHICAGO:Ward 40 Precinct 20
+CITY OF CHICAGO:Ward 47 Precinct 01,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 40 Precinct 19', 'pct': 14.1}",CITY OF CHICAGO:Ward 40 Precinct 19
+CITY OF CHICAGO:Ward 47 Precinct 01,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 40 Precinct 19', 'pct': 9.27}",CITY OF CHICAGO:Ward 40 Precinct 19
+CITY OF CHICAGO:Ward 47 Precinct 01,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 40 Precinct 20', 'pct': 8.84}",CITY OF CHICAGO:Ward 40 Precinct 20
+CITY OF CHICAGO:Ward 47 Precinct 01,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 40 Precinct 20', 'pct': 4.82}",CITY OF CHICAGO:Ward 40 Precinct 20
+CITY OF CHICAGO:Ward 47 Precinct 02,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 47 Precinct 02', 'pct': 99.92}",CITY OF CHICAGO:Ward 47 Precinct 02
+CITY OF CHICAGO:Ward 47 Precinct 03,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 47 Precinct 02', 'pct': 35.64}",CITY OF CHICAGO:Ward 47 Precinct 02
+CITY OF CHICAGO:Ward 47 Precinct 03,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 40 Precinct 21', 'pct': 16.7}",CITY OF CHICAGO:Ward 40 Precinct 21
+CITY OF CHICAGO:Ward 47 Precinct 03,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 40 Precinct 21', 'pct': 14.98}",CITY OF CHICAGO:Ward 40 Precinct 21
+CITY OF CHICAGO:Ward 47 Precinct 03,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 40 Precinct 14', 'pct': 13.45}",CITY OF CHICAGO:Ward 40 Precinct 14
+CITY OF CHICAGO:Ward 47 Precinct 03,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 40 Precinct 21', 'pct': 8.74}",CITY OF CHICAGO:Ward 40 Precinct 21
+CITY OF CHICAGO:Ward 47 Precinct 03,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 47 Precinct 11', 'pct': 5.84}",CITY OF CHICAGO:Ward 47 Precinct 11
+CITY OF CHICAGO:Ward 47 Precinct 03,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 47 Precinct 04', 'pct': 4.65}",CITY OF CHICAGO:Ward 47 Precinct 04
+CITY OF CHICAGO:Ward 47 Precinct 04,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 47 Precinct 04', 'pct': 99.95}",CITY OF CHICAGO:Ward 47 Precinct 04
+CITY OF CHICAGO:Ward 47 Precinct 05,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 47 Precinct 05', 'pct': 99.93}",CITY OF CHICAGO:Ward 47 Precinct 05
+CITY OF CHICAGO:Ward 47 Precinct 06,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 47 Precinct 06', 'pct': 99.91}",CITY OF CHICAGO:Ward 47 Precinct 06
+CITY OF CHICAGO:Ward 47 Precinct 11,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 47 Precinct 11', 'pct': 85.12}",CITY OF CHICAGO:Ward 47 Precinct 11
+CITY OF CHICAGO:Ward 47 Precinct 11,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 47 Precinct 04', 'pct': 14.88}",CITY OF CHICAGO:Ward 47 Precinct 04
+CITY OF CHICAGO:Ward 47 Precinct 20,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 46 Precinct 10', 'pct': 100.0}",CITY OF CHICAGO:Ward 46 Precinct 10
+CITY OF CHICAGO:Ward 48 Precinct 01,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 48 Precinct 01', 'pct': 99.89}",CITY OF CHICAGO:Ward 48 Precinct 01
+CITY OF CHICAGO:Ward 48 Precinct 02,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 48 Precinct 02', 'pct': 99.56}",CITY OF CHICAGO:Ward 48 Precinct 02
+CITY OF CHICAGO:Ward 48 Precinct 03,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 48 Precinct 03', 'pct': 99.87}",CITY OF CHICAGO:Ward 48 Precinct 03
+CITY OF CHICAGO:Ward 48 Precinct 04,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 48 Precinct 04', 'pct': 99.77}",CITY OF CHICAGO:Ward 48 Precinct 04
+CITY OF CHICAGO:Ward 48 Precinct 05,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 48 Precinct 05', 'pct': 99.86}",CITY OF CHICAGO:Ward 48 Precinct 05
+CITY OF CHICAGO:Ward 48 Precinct 06,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 48 Precinct 06', 'pct': 99.91}",CITY OF CHICAGO:Ward 48 Precinct 06
+CITY OF CHICAGO:Ward 48 Precinct 07,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 48 Precinct 07', 'pct': 99.88}",CITY OF CHICAGO:Ward 48 Precinct 07
+CITY OF CHICAGO:Ward 48 Precinct 08,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 48 Precinct 08', 'pct': 99.83}",CITY OF CHICAGO:Ward 48 Precinct 08
+CITY OF CHICAGO:Ward 48 Precinct 09,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 48 Precinct 09', 'pct': 99.64}",CITY OF CHICAGO:Ward 48 Precinct 09
+CITY OF CHICAGO:Ward 48 Precinct 10,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 48 Precinct 10', 'pct': 99.93}",CITY OF CHICAGO:Ward 48 Precinct 10
+CITY OF CHICAGO:Ward 48 Precinct 11,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 48 Precinct 11', 'pct': 99.89}",CITY OF CHICAGO:Ward 48 Precinct 11
+CITY OF CHICAGO:Ward 48 Precinct 12,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 48 Precinct 12', 'pct': 99.93}",CITY OF CHICAGO:Ward 48 Precinct 12
+CITY OF CHICAGO:Ward 48 Precinct 13,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 48 Precinct 13', 'pct': 99.76}",CITY OF CHICAGO:Ward 48 Precinct 13
+CITY OF CHICAGO:Ward 48 Precinct 14,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 48 Precinct 14', 'pct': 99.76}",CITY OF CHICAGO:Ward 48 Precinct 14
+CITY OF CHICAGO:Ward 48 Precinct 15,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 48 Precinct 15', 'pct': 99.87}",CITY OF CHICAGO:Ward 48 Precinct 15
+CITY OF CHICAGO:Ward 48 Precinct 16,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 48 Precinct 16', 'pct': 99.94}",CITY OF CHICAGO:Ward 48 Precinct 16
+CITY OF CHICAGO:Ward 48 Precinct 17,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 48 Precinct 17', 'pct': 99.92}",CITY OF CHICAGO:Ward 48 Precinct 17
+CITY OF CHICAGO:Ward 48 Precinct 18,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 48 Precinct 18', 'pct': 99.79}",CITY OF CHICAGO:Ward 48 Precinct 18
+CITY OF CHICAGO:Ward 48 Precinct 19,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 48 Precinct 19', 'pct': 99.87}",CITY OF CHICAGO:Ward 48 Precinct 19
+CITY OF CHICAGO:Ward 48 Precinct 20,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 48 Precinct 20', 'pct': 99.3}",CITY OF CHICAGO:Ward 48 Precinct 20
+CITY OF CHICAGO:Ward 48 Precinct 21,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 48 Precinct 21', 'pct': 99.89}",CITY OF CHICAGO:Ward 48 Precinct 21
+CITY OF CHICAGO:Ward 48 Precinct 22,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 48 Precinct 22', 'pct': 99.25}",CITY OF CHICAGO:Ward 48 Precinct 22
+CITY OF CHICAGO:Ward 48 Precinct 23,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 48 Precinct 23', 'pct': 99.8}",CITY OF CHICAGO:Ward 48 Precinct 23
+CITY OF CHICAGO:Ward 48 Precinct 24,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 48 Precinct 24', 'pct': 99.95}",CITY OF CHICAGO:Ward 48 Precinct 24
+CITY OF CHICAGO:Ward 48 Precinct 25,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 48 Precinct 25', 'pct': 99.92}",CITY OF CHICAGO:Ward 48 Precinct 25
+CITY OF CHICAGO:Ward 48 Precinct 26,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 48 Precinct 26', 'pct': 99.86}",CITY OF CHICAGO:Ward 48 Precinct 26
+CITY OF CHICAGO:Ward 48 Precinct 27,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 48 Precinct 27', 'pct': 99.92}",CITY OF CHICAGO:Ward 48 Precinct 27
+CITY OF CHICAGO:Ward 48 Precinct 28,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 48 Precinct 28', 'pct': 99.85}",CITY OF CHICAGO:Ward 48 Precinct 28
+CITY OF CHICAGO:Ward 48 Precinct 29,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 48 Precinct 29', 'pct': 99.51}",CITY OF CHICAGO:Ward 48 Precinct 29
+CITY OF CHICAGO:Ward 48 Precinct 30,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 48 Precinct 30', 'pct': 99.92}",CITY OF CHICAGO:Ward 48 Precinct 30
+CITY OF CHICAGO:Ward 48 Precinct 31,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 48 Precinct 31', 'pct': 99.9}",CITY OF CHICAGO:Ward 48 Precinct 31
+CITY OF CHICAGO:Ward 48 Precinct 32,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 48 Precinct 32', 'pct': 99.86}",CITY OF CHICAGO:Ward 48 Precinct 32
+CITY OF CHICAGO:Ward 48 Precinct 33,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 48 Precinct 33', 'pct': 99.77}",CITY OF CHICAGO:Ward 48 Precinct 33
+CITY OF CHICAGO:Ward 48 Precinct 34,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 48 Precinct 34', 'pct': 99.91}",CITY OF CHICAGO:Ward 48 Precinct 34
+CITY OF CHICAGO:Ward 48 Precinct 35,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 48 Precinct 35', 'pct': 99.92}",CITY OF CHICAGO:Ward 48 Precinct 35
+CITY OF CHICAGO:Ward 49 Precinct 01,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 49 Precinct 01', 'pct': 99.93}",CITY OF CHICAGO:Ward 49 Precinct 01
+CITY OF CHICAGO:Ward 49 Precinct 02,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 49 Precinct 02', 'pct': 99.9}",CITY OF CHICAGO:Ward 49 Precinct 02
+CITY OF CHICAGO:Ward 49 Precinct 03,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 49 Precinct 03', 'pct': 99.96}",CITY OF CHICAGO:Ward 49 Precinct 03
+CITY OF CHICAGO:Ward 49 Precinct 04,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 49 Precinct 04', 'pct': 99.93}",CITY OF CHICAGO:Ward 49 Precinct 04
+CITY OF CHICAGO:Ward 49 Precinct 05,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 49 Precinct 05', 'pct': 99.94}",CITY OF CHICAGO:Ward 49 Precinct 05
+CITY OF CHICAGO:Ward 49 Precinct 06,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 49 Precinct 06', 'pct': 99.88}",CITY OF CHICAGO:Ward 49 Precinct 06
+CITY OF CHICAGO:Ward 49 Precinct 07,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 49 Precinct 07', 'pct': 99.93}",CITY OF CHICAGO:Ward 49 Precinct 07
+CITY OF CHICAGO:Ward 49 Precinct 08,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 49 Precinct 08', 'pct': 99.93}",CITY OF CHICAGO:Ward 49 Precinct 08
+CITY OF CHICAGO:Ward 49 Precinct 09,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 49 Precinct 09', 'pct': 99.91}",CITY OF CHICAGO:Ward 49 Precinct 09
+CITY OF CHICAGO:Ward 49 Precinct 10,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 49 Precinct 10', 'pct': 99.93}",CITY OF CHICAGO:Ward 49 Precinct 10
+CITY OF CHICAGO:Ward 49 Precinct 11,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 49 Precinct 11', 'pct': 99.9}",CITY OF CHICAGO:Ward 49 Precinct 11
+CITY OF CHICAGO:Ward 49 Precinct 12,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 49 Precinct 12', 'pct': 99.95}",CITY OF CHICAGO:Ward 49 Precinct 12
+CITY OF CHICAGO:Ward 49 Precinct 13,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 49 Precinct 13', 'pct': 99.94}",CITY OF CHICAGO:Ward 49 Precinct 13
+CITY OF CHICAGO:Ward 49 Precinct 14,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 49 Precinct 14', 'pct': 99.92}",CITY OF CHICAGO:Ward 49 Precinct 14
+CITY OF CHICAGO:Ward 49 Precinct 15,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 49 Precinct 15', 'pct': 99.92}",CITY OF CHICAGO:Ward 49 Precinct 15
+CITY OF CHICAGO:Ward 49 Precinct 16,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 49 Precinct 16', 'pct': 99.86}",CITY OF CHICAGO:Ward 49 Precinct 16
+CITY OF CHICAGO:Ward 49 Precinct 17,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 49 Precinct 17', 'pct': 99.94}",CITY OF CHICAGO:Ward 49 Precinct 17
+CITY OF CHICAGO:Ward 50 Precinct 01,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 50 Precinct 01', 'pct': 99.93}",CITY OF CHICAGO:Ward 50 Precinct 01
+CITY OF CHICAGO:Ward 50 Precinct 02,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 50 Precinct 02', 'pct': 99.96}",CITY OF CHICAGO:Ward 50 Precinct 02
+CITY OF CHICAGO:Ward 50 Precinct 03,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 50 Precinct 03', 'pct': 99.91}",CITY OF CHICAGO:Ward 50 Precinct 03
+CITY OF CHICAGO:Ward 50 Precinct 04,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 50 Precinct 04', 'pct': 99.95}",CITY OF CHICAGO:Ward 50 Precinct 04
+CITY OF CHICAGO:Ward 50 Precinct 05,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 50 Precinct 05', 'pct': 99.92}",CITY OF CHICAGO:Ward 50 Precinct 05
+CITY OF CHICAGO:Ward 50 Precinct 06,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 50 Precinct 06', 'pct': 99.89}",CITY OF CHICAGO:Ward 50 Precinct 06
+CITY OF CHICAGO:Ward 50 Precinct 07,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 50 Precinct 07', 'pct': 99.94}",CITY OF CHICAGO:Ward 50 Precinct 07
+CITY OF CHICAGO:Ward 50 Precinct 08,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 50 Precinct 08', 'pct': 99.87}",CITY OF CHICAGO:Ward 50 Precinct 08
+CITY OF CHICAGO:Ward 50 Precinct 09,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 50 Precinct 09', 'pct': 99.9}",CITY OF CHICAGO:Ward 50 Precinct 09
+CITY OF CHICAGO:Ward 50 Precinct 10,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 50 Precinct 10', 'pct': 99.96}",CITY OF CHICAGO:Ward 50 Precinct 10
+CITY OF CHICAGO:Ward 50 Precinct 11,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 50 Precinct 11', 'pct': 99.94}",CITY OF CHICAGO:Ward 50 Precinct 11
+CITY OF CHICAGO:Ward 50 Precinct 12,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 50 Precinct 12', 'pct': 99.86}",CITY OF CHICAGO:Ward 50 Precinct 12
+CITY OF CHICAGO:Ward 50 Precinct 13,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 50 Precinct 13', 'pct': 99.92}",CITY OF CHICAGO:Ward 50 Precinct 13
+CITY OF CHICAGO:Ward 50 Precinct 14,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 50 Precinct 14', 'pct': 99.83}",CITY OF CHICAGO:Ward 50 Precinct 14
+CITY OF CHICAGO:Ward 50 Precinct 15,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 50 Precinct 15', 'pct': 99.95}",CITY OF CHICAGO:Ward 50 Precinct 15
+CITY OF CHICAGO:Ward 50 Precinct 16,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 50 Precinct 16', 'pct': 99.89}",CITY OF CHICAGO:Ward 50 Precinct 16
+CITY OF CHICAGO:Ward 50 Precinct 17,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 50 Precinct 17', 'pct': 99.92}",CITY OF CHICAGO:Ward 50 Precinct 17
+CITY OF CHICAGO:Ward 50 Precinct 18,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 50 Precinct 18', 'pct': 99.82}",CITY OF CHICAGO:Ward 50 Precinct 18
+CITY OF CHICAGO:Ward 50 Precinct 19,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 50 Precinct 19', 'pct': 99.93}",CITY OF CHICAGO:Ward 50 Precinct 19
+CITY OF CHICAGO:Ward 50 Precinct 20,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 50 Precinct 20', 'pct': 99.9}",CITY OF CHICAGO:Ward 50 Precinct 20
+CITY OF CHICAGO:Ward 50 Precinct 21,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 50 Precinct 21', 'pct': 99.94}",CITY OF CHICAGO:Ward 50 Precinct 21
+CITY OF CHICAGO:Ward 50 Precinct 22,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 50 Precinct 22', 'pct': 99.93}",CITY OF CHICAGO:Ward 50 Precinct 22
+CITY OF CHICAGO:Ward 50 Precinct 23,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 50 Precinct 23', 'pct': 99.96}",CITY OF CHICAGO:Ward 50 Precinct 23
+CITY OF CHICAGO:Ward 50 Precinct 24,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 50 Precinct 24', 'pct': 99.97}",CITY OF CHICAGO:Ward 50 Precinct 24
+CITY OF CHICAGO:Ward 50 Precinct 25,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 50 Precinct 25', 'pct': 99.94}",CITY OF CHICAGO:Ward 50 Precinct 25
+CITY OF CHICAGO:Ward 50 Precinct 26,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 50 Precinct 26', 'pct': 99.9}",CITY OF CHICAGO:Ward 50 Precinct 26
+CITY OF CHICAGO:Ward 50 Precinct 27,Unchanged,"{'new_id': 'CITY OF CHICAGO:Ward 50 Precinct 27', 'pct': 99.78}",CITY OF CHICAGO:Ward 50 Precinct 27
+CITY OF CHICAGO:Ward 50 Precinct 28,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 50 Precinct 23', 'pct': 49.48}",CITY OF CHICAGO:Ward 50 Precinct 23
+CITY OF CHICAGO:Ward 50 Precinct 28,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 50 Precinct 23', 'pct': 41.97}",CITY OF CHICAGO:Ward 50 Precinct 23
+CITY OF CHICAGO:Ward 50 Precinct 28,SPLIT,"{'new_id': 'CITY OF CHICAGO:Ward 50 Precinct 23', 'pct': 8.55}",CITY OF CHICAGO:Ward 50 Precinct 23
+COOK:7000005,SPLIT,"{'new_id': 'MCHENRY:ALG 60', 'pct': 88.72}",MCHENRY:ALG 60
+COOK:7000005,SPLIT,"{'new_id': 'MCHENRY:ALG 60', 'pct': 11.28}",MCHENRY:ALG 60
+COOK:7501001,Unchanged,"{'new_id': 'COOK:7501001', 'pct': 99.93}",COOK:7501001
+COOK:7501002,Unchanged,"{'new_id': 'COOK:7501002', 'pct': 99.78}",COOK:7501002
+COOK:7501003,Unchanged,"{'new_id': 'COOK:7501003', 'pct': 99.92}",COOK:7501003
+COOK:7501004,Unchanged,"{'new_id': 'COOK:7501004', 'pct': 99.96}",COOK:7501004
+COOK:7502001,Unchanged,"{'new_id': 'COOK:7502001', 'pct': 99.93}",COOK:7502001
+COOK:7502002,Unchanged,"{'new_id': 'COOK:7502002', 'pct': 99.93}",COOK:7502002
+COOK:7502003,Unchanged,"{'new_id': 'COOK:7502003', 'pct': 99.95}",COOK:7502003
+COOK:7502004,Unchanged,"{'new_id': 'COOK:7502004', 'pct': 99.95}",COOK:7502004
+COOK:7502005,Unchanged,"{'new_id': 'COOK:7502005', 'pct': 99.93}",COOK:7502005
+COOK:7503001,Unchanged,"{'new_id': 'COOK:7503001', 'pct': 99.95}",COOK:7503001
+COOK:7503002,Unchanged,"{'new_id': 'COOK:7503002', 'pct': 99.92}",COOK:7503002
+COOK:7503003,Unchanged,"{'new_id': 'COOK:7503003', 'pct': 99.91}",COOK:7503003
+COOK:7503004,Unchanged,"{'new_id': 'COOK:7503004', 'pct': 99.96}",COOK:7503004
+COOK:7503005,Unchanged,"{'new_id': 'COOK:7503005', 'pct': 99.9}",COOK:7503005
+COOK:7504001,Unchanged,"{'new_id': 'COOK:7504001', 'pct': 99.93}",COOK:7504001
+COOK:7504002,Unchanged,"{'new_id': 'COOK:7504002', 'pct': 99.87}",COOK:7504002
+COOK:7504003,Unchanged,"{'new_id': 'COOK:7504003', 'pct': 99.86}",COOK:7504003
+COOK:7504004,Unchanged,"{'new_id': 'COOK:7504004', 'pct': 99.94}",COOK:7504004
+COOK:7504005,Unchanged,"{'new_id': 'COOK:7504005', 'pct': 99.88}",COOK:7504005
+COOK:7504006,Unchanged,"{'new_id': 'COOK:7504006', 'pct': 99.9}",COOK:7504006
+COOK:7504007,Unchanged,"{'new_id': 'COOK:7504007', 'pct': 99.89}",COOK:7504007
+COOK:7505001,Unchanged,"{'new_id': 'COOK:7505001', 'pct': 99.95}",COOK:7505001
+COOK:7505002,Unchanged,"{'new_id': 'COOK:7505002', 'pct': 99.93}",COOK:7505002
+COOK:7505003,Unchanged,"{'new_id': 'COOK:7505003', 'pct': 99.93}",COOK:7505003
+COOK:7506001,Unchanged,"{'new_id': 'COOK:7506001', 'pct': 99.94}",COOK:7506001
+COOK:7506002,Unchanged,"{'new_id': 'COOK:7506002', 'pct': 99.93}",COOK:7506002
+COOK:7506003,Unchanged,"{'new_id': 'COOK:7506003', 'pct': 99.93}",COOK:7506003
+COOK:7506004,Unchanged,"{'new_id': 'COOK:7506004', 'pct': 99.94}",COOK:7506004
+COOK:7506005,Unchanged,"{'new_id': 'COOK:7506005', 'pct': 99.9}",COOK:7506005
+COOK:7506006,Unchanged,"{'new_id': 'COOK:7506006', 'pct': 99.94}",COOK:7506006
+COOK:7507001,Unchanged,"{'new_id': 'COOK:7507001', 'pct': 99.94}",COOK:7507001
+COOK:7507002,Unchanged,"{'new_id': 'COOK:7507002', 'pct': 99.94}",COOK:7507002
+COOK:7507003,Unchanged,"{'new_id': 'COOK:7507003', 'pct': 99.94}",COOK:7507003
+COOK:7507004,Unchanged,"{'new_id': 'COOK:7507004', 'pct': 99.91}",COOK:7507004
+COOK:7507005,Unchanged,"{'new_id': 'COOK:7507005', 'pct': 99.96}",COOK:7507005
+COOK:7508001,Unchanged,"{'new_id': 'COOK:7508001', 'pct': 99.96}",COOK:7508001
+COOK:7508002,Unchanged,"{'new_id': 'COOK:7508002', 'pct': 99.91}",COOK:7508002
+COOK:7508003,Unchanged,"{'new_id': 'COOK:7508003', 'pct': 99.91}",COOK:7508003
+COOK:7508004,Unchanged,"{'new_id': 'COOK:7508004', 'pct': 99.9}",COOK:7508004
+COOK:7508005,Unchanged,"{'new_id': 'COOK:7508005', 'pct': 99.92}",COOK:7508005
+COOK:7509001,Unchanged,"{'new_id': 'COOK:7509001', 'pct': 99.88}",COOK:7509001
+COOK:7509002,Unchanged,"{'new_id': 'COOK:7509002', 'pct': 99.93}",COOK:7509002
+COOK:7509003,Unchanged,"{'new_id': 'COOK:7509003', 'pct': 99.92}",COOK:7509003
+COOK:7509004,Unchanged,"{'new_id': 'COOK:7509004', 'pct': 99.88}",COOK:7509004
+COOK:7509005,Unchanged,"{'new_id': 'COOK:7509005', 'pct': 99.87}",COOK:7509005
+COOK:8000001,SPLIT,"{'new_id': 'COOK:8000051', 'pct': 47.35}",COOK:8000051
+COOK:8000001,SPLIT,"{'new_id': 'COOK:8000051', 'pct': 38.43}",COOK:8000051
+COOK:8000001,SPLIT,"{'new_id': 'COOK:8000051', 'pct': 13.7}",COOK:8000051
+COOK:8000002,SPLIT,"{'new_id': 'COOK:8300004', 'pct': 39.16}",COOK:8300004
+COOK:8000002,SPLIT,"{'new_id': 'COOK:8300004', 'pct': 38.09}",COOK:8300004
+COOK:8000002,SPLIT,"{'new_id': 'COOK:8300004', 'pct': 19.95}",COOK:8300004
+COOK:8000002,SPLIT,"{'new_id': 'COOK:8300004', 'pct': 2.45}",COOK:8300004
+COOK:8000005,SPLIT,"{'new_id': 'COOK:8300004', 'pct': 90.15}",COOK:8300004
+COOK:8000005,SPLIT,"{'new_id': 'COOK:8300001', 'pct': 9.85}",COOK:8300001
+COOK:8000008,Unchanged,"{'new_id': 'COOK:8000008', 'pct': 99.95}",COOK:8000008
+COOK:8000011,Unchanged,"{'new_id': 'COOK:8000011', 'pct': 99.87}",COOK:8000011
+COOK:8000015,Unchanged,"{'new_id': 'COOK:8000015', 'pct': 99.94}",COOK:8000015
+COOK:8000019,SPLIT,"{'new_id': 'COOK:8000019', 'pct': 89.49}",COOK:8000019
+COOK:8000019,SPLIT,"{'new_id': 'COOK:8000051', 'pct': 10.51}",COOK:8000051
+COOK:8000020,Unchanged,"{'new_id': 'COOK:8000020', 'pct': 99.95}",COOK:8000020
+COOK:8000022,SPLIT,"{'new_id': 'COOK:8000022', 'pct': 49.64}",COOK:8000022
+COOK:8000022,SPLIT,"{'new_id': 'COOK:8000029', 'pct': 43.09}",COOK:8000029
+COOK:8000022,SPLIT,"{'new_id': 'COOK:8000022', 'pct': 6.93}",COOK:8000022
+COOK:8000024,SPLIT,"{'new_id': 'COOK:8000024', 'pct': 73.27}",COOK:8000024
+COOK:8000024,SPLIT,"{'new_id': 'COOK:8000030', 'pct': 4.25}",COOK:8000030
+COOK:8000024,SPLIT,"{'new_id': 'COOK:8000024', 'pct': 3.85}",COOK:8000024
+COOK:8000024,SPLIT,"{'new_id': 'COOK:8000024', 'pct': 3.4}",COOK:8000024
+COOK:8000024,SPLIT,"{'new_id': 'COOK:8000024', 'pct': 3.02}",COOK:8000024
+COOK:8000024,SPLIT,"{'new_id': 'COOK:8000030', 'pct': 2.54}",COOK:8000030
+COOK:8000024,SPLIT,"{'new_id': 'COOK:8000020', 'pct': 2.12}",COOK:8000020
+COOK:8000024,SPLIT,"{'new_id': 'COOK:8000030', 'pct': 2.11}",COOK:8000030
+COOK:8000027,SPLIT,"{'new_id': 'COOK:8000027', 'pct': 84.57}",COOK:8000027
+COOK:8000027,SPLIT,"{'new_id': 'COOK:8000020', 'pct': 15.43}",COOK:8000020
+COOK:8000029,Unchanged,"{'new_id': 'COOK:8000029', 'pct': 99.95}",COOK:8000029
+COOK:8000030,Unchanged,"{'new_id': 'COOK:8000030', 'pct': 99.96}",COOK:8000030
+COOK:8000031,Unchanged,"{'new_id': 'COOK:8000031', 'pct': 99.95}",COOK:8000031
+COOK:8000032,Unchanged,"{'new_id': 'COOK:8000032', 'pct': 99.93}",COOK:8000032
+COOK:8000039,Unchanged,"{'new_id': 'COOK:8000039', 'pct': 99.92}",COOK:8000039
+COOK:8000040,Unchanged,"{'new_id': 'COOK:8000040', 'pct': 99.95}",COOK:8000040
+COOK:8000043,Unchanged,"{'new_id': 'COOK:8000043', 'pct': 99.95}",COOK:8000043
+COOK:8000044,Unchanged,"{'new_id': 'COOK:8000044', 'pct': 99.92}",COOK:8000044
+COOK:8000046,Unchanged,"{'new_id': 'COOK:8000046', 'pct': 99.98}",COOK:8000046
+COOK:8000050,SPLIT,"{'new_id': 'COOK:8000050', 'pct': 21.57}",COOK:8000050
+COOK:8000050,SPLIT,"{'new_id': 'COOK:8000008', 'pct': 18.65}",COOK:8000008
+COOK:8000050,SPLIT,"{'new_id': 'COOK:8000050', 'pct': 18.65}",COOK:8000050
+COOK:8000050,SPLIT,"{'new_id': 'COOK:8000008', 'pct': 11.84}",COOK:8000008
+COOK:8000050,SPLIT,"{'new_id': 'COOK:8000008', 'pct': 7.61}",COOK:8000008
+COOK:8000050,SPLIT,"{'new_id': 'COOK:8000050', 'pct': 7.61}",COOK:8000050
+COOK:8000050,SPLIT,"{'new_id': 'COOK:8000050', 'pct': 4.62}",COOK:8000050
+COOK:8000050,SPLIT,"{'new_id': 'COOK:8000050', 'pct': 3.46}",COOK:8000050
+COOK:8000051,Unchanged,"{'new_id': 'COOK:8000051', 'pct': 99.96}",COOK:8000051
+COOK:8000052,Unchanged,"{'new_id': 'COOK:8000052', 'pct': 99.95}",COOK:8000052
+COOK:8000055,Unchanged,"{'new_id': 'COOK:8000055', 'pct': 99.93}",COOK:8000055
+COOK:8000058,Unchanged,"{'new_id': 'COOK:8000058', 'pct': 99.94}",COOK:8000058
+COOK:8000059,Unchanged,"{'new_id': 'COOK:8000059', 'pct': 99.94}",COOK:8000059
+COOK:8000060,Unchanged,"{'new_id': 'COOK:8000060', 'pct': 99.98}",COOK:8000060
+COOK:8000062,SPLIT,"{'new_id': 'COOK:8300039', 'pct': 42.56}",COOK:8300039
+COOK:8000062,SPLIT,"{'new_id': 'COOK:8300039', 'pct': 40.49}",COOK:8300039
+COOK:8000062,SPLIT,"{'new_id': 'COOK:9600011', 'pct': 6.41}",COOK:9600011
+COOK:8000062,SPLIT,"{'new_id': 'COOK:8300033', 'pct': 5.24}",COOK:8300033
+COOK:8000062,SPLIT,"{'new_id': 'COOK:8300033', 'pct': 5.1}",COOK:8300033
+COOK:8000063,Unchanged,"{'new_id': 'COOK:8000063', 'pct': 99.94}",COOK:8000063
+COOK:8000065,SPLIT,"{'new_id': 'COOK:8000065', 'pct': 46.97}",COOK:8000065
+COOK:8000065,SPLIT,"{'new_id': 'COOK:8000008', 'pct': 38.15}",COOK:8000008
+COOK:8000065,SPLIT,"{'new_id': 'COOK:8000065', 'pct': 9.86}",COOK:8000065
+COOK:8000065,SPLIT,"{'new_id': 'COOK:8000065', 'pct': 5.02}",COOK:8000065
+COOK:8000069,Unchanged,"{'new_id': 'COOK:8000069', 'pct': 99.98}",COOK:8000069
+COOK:8000071,Unchanged,"{'new_id': 'COOK:8000060', 'pct': 99.51}",COOK:8000060
+COOK:8000072,Unchanged,"{'new_id': 'COOK:8000072', 'pct': 99.95}",COOK:8000072
+COOK:8000073,Unchanged,"{'new_id': 'COOK:8000073', 'pct': 99.95}",COOK:8000073
+COOK:8000074,Unchanged,"{'new_id': 'COOK:8000074', 'pct': 99.92}",COOK:8000074
+COOK:8000075,Unchanged,"{'new_id': 'COOK:8000075', 'pct': 99.94}",COOK:8000075
+COOK:8000076,Unchanged,"{'new_id': 'COOK:8000076', 'pct': 99.93}",COOK:8000076
+COOK:8000078,SPLIT,"{'new_id': 'COOK:8000078', 'pct': 91.57}",COOK:8000078
+COOK:8000078,SPLIT,"{'new_id': 'COOK:8000081', 'pct': 6.92}",COOK:8000081
+COOK:8000081,Unchanged,"{'new_id': 'COOK:8000081', 'pct': 99.95}",COOK:8000081
+COOK:8000082,SPLIT,"{'new_id': 'COOK:8000082', 'pct': 90.51}",COOK:8000082
+COOK:8000082,SPLIT,"{'new_id': 'COOK:8000082', 'pct': 8.6}",COOK:8000082
+COOK:8000083,Unchanged,"{'new_id': 'COOK:8000083', 'pct': 99.9}",COOK:8000083
+COOK:8100003,Unchanged,"{'new_id': 'COOK:8100003', 'pct': 99.91}",COOK:8100003
+COOK:8100006,SPLIT,"{'new_id': 'COOK:8100006', 'pct': 66.41}",COOK:8100006
+COOK:8100006,SPLIT,"{'new_id': 'COOK:8100006', 'pct': 24.73}",COOK:8100006
+COOK:8100006,SPLIT,"{'new_id': 'COOK:8300008', 'pct': 6.46}",COOK:8300008
+COOK:8100006,SPLIT,"{'new_id': 'COOK:8300008', 'pct': 2.16}",COOK:8300008
+COOK:8100011,SPLIT,"{'new_id': 'COOK:8100011', 'pct': 65.28}",COOK:8100011
+COOK:8100011,SPLIT,"{'new_id': 'COOK:8300008', 'pct': 34.12}",COOK:8300008
+COOK:8100013,Unchanged,"{'new_id': 'COOK:8100013', 'pct': 99.96}",COOK:8100013
+COOK:8100015,SPLIT,"{'new_id': 'COOK:8100039', 'pct': 52.96}",COOK:8100039
+COOK:8100015,SPLIT,"{'new_id': 'COOK:8300035', 'pct': 19.53}",COOK:8300035
+COOK:8100015,SPLIT,"{'new_id': 'COOK:8100026', 'pct': 13.1}",COOK:8100026
+COOK:8100015,SPLIT,"{'new_id': 'COOK:8100024', 'pct': 10.62}",COOK:8100024
+COOK:8100015,SPLIT,"{'new_id': 'COOK:8100026', 'pct': 3.78}",COOK:8100026
+COOK:8100017,Unchanged,"{'new_id': 'COOK:8100017', 'pct': 99.96}",COOK:8100017
+COOK:8100018,SPLIT,"{'new_id': 'COOK:8100036', 'pct': 57.68}",COOK:8100036
+COOK:8100018,SPLIT,"{'new_id': 'COOK:8100037', 'pct': 21.84}",COOK:8100037
+COOK:8100018,SPLIT,"{'new_id': 'COOK:8100031', 'pct': 20.44}",COOK:8100031
+COOK:8100020,SPLIT,"{'new_id': 'COOK:8300009', 'pct': 52.43}",COOK:8300009
+COOK:8100020,SPLIT,"{'new_id': 'COOK:8300037', 'pct': 15.65}",COOK:8300037
+COOK:8100020,SPLIT,"{'new_id': 'COOK:8300035', 'pct': 15.42}",COOK:8300035
+COOK:8100020,SPLIT,"{'new_id': 'COOK:8300037', 'pct': 9.28}",COOK:8300037
+COOK:8100020,SPLIT,"{'new_id': 'COOK:8300037', 'pct': 6.07}",COOK:8300037
+COOK:8100021,Unchanged,"{'new_id': 'COOK:8100021', 'pct': 99.95}",COOK:8100021
+COOK:8100024,Unchanged,"{'new_id': 'COOK:8100024', 'pct': 99.98}",COOK:8100024
+COOK:8100026,Unchanged,"{'new_id': 'COOK:8100026', 'pct': 99.98}",COOK:8100026
+COOK:8100027,Unchanged,"{'new_id': 'COOK:8100027', 'pct': 99.94}",COOK:8100027
+COOK:8100031,Unchanged,"{'new_id': 'COOK:8100031', 'pct': 99.96}",COOK:8100031
+COOK:8100032,Unchanged,"{'new_id': 'COOK:8100032', 'pct': 99.95}",COOK:8100032
+COOK:8100033,Unchanged,"{'new_id': 'COOK:8100033', 'pct': 99.93}",COOK:8100033
+COOK:8100034,Unchanged,"{'new_id': 'COOK:8100034', 'pct': 99.95}",COOK:8100034
+COOK:8100036,Unchanged,"{'new_id': 'COOK:8100036', 'pct': 99.96}",COOK:8100036
+COOK:8100037,Unchanged,"{'new_id': 'COOK:8100037', 'pct': 99.97}",COOK:8100037
+COOK:8100038,Unchanged,"{'new_id': 'COOK:8100038', 'pct': 99.92}",COOK:8100038
+COOK:8100039,Unchanged,"{'new_id': 'COOK:8100039', 'pct': 99.96}",COOK:8100039
+COOK:8200001,Unchanged,"{'new_id': 'COOK:8200001', 'pct': 99.99}",COOK:8200001
+COOK:8200002,Unchanged,"{'new_id': 'COOK:8200002', 'pct': 99.97}",COOK:8200002
+COOK:8200003,Unchanged,"{'new_id': 'COOK:8200003', 'pct': 99.97}",COOK:8200003
+COOK:8200004,Unchanged,"{'new_id': 'COOK:8200004', 'pct': 99.97}",COOK:8200004
+COOK:8200005,Unchanged,"{'new_id': 'COOK:8200005', 'pct': 99.93}",COOK:8200005
+COOK:8200006,Unchanged,"{'new_id': 'COOK:8200006', 'pct': 99.97}",COOK:8200006
+COOK:8200007,Unchanged,"{'new_id': 'COOK:8200007', 'pct': 99.97}",COOK:8200007
+COOK:8200008,Unchanged,"{'new_id': 'COOK:8200008', 'pct': 99.91}",COOK:8200008
+COOK:8200009,Unchanged,"{'new_id': 'COOK:8200009', 'pct': 99.95}",COOK:8200009
+COOK:8200010,Unchanged,"{'new_id': 'COOK:8200010', 'pct': 99.96}",COOK:8200010
+COOK:8200011,Unchanged,"{'new_id': 'COOK:8200011', 'pct': 99.95}",COOK:8200011
+COOK:8200012,Unchanged,"{'new_id': 'COOK:8200012', 'pct': 99.96}",COOK:8200012
+COOK:8200013,Unchanged,"{'new_id': 'COOK:8200013', 'pct': 99.93}",COOK:8200013
+COOK:8200014,Unchanged,"{'new_id': 'COOK:8200014', 'pct': 99.93}",COOK:8200014
+COOK:8200015,Unchanged,"{'new_id': 'COOK:8200015', 'pct': 99.94}",COOK:8200015
+COOK:8200016,Unchanged,"{'new_id': 'COOK:8200016', 'pct': 99.96}",COOK:8200016
+COOK:8200017,Unchanged,"{'new_id': 'COOK:8200017', 'pct': 99.96}",COOK:8200017
+COOK:8200018,Unchanged,"{'new_id': 'COOK:8200018', 'pct': 99.95}",COOK:8200018
+COOK:8200019,Unchanged,"{'new_id': 'COOK:8200019', 'pct': 99.94}",COOK:8200019
+COOK:8200020,Unchanged,"{'new_id': 'COOK:8200020', 'pct': 99.94}",COOK:8200020
+COOK:8200021,Unchanged,"{'new_id': 'COOK:8200021', 'pct': 99.92}",COOK:8200021
+COOK:8200022,Unchanged,"{'new_id': 'COOK:8200022', 'pct': 99.93}",COOK:8200022
+COOK:8200023,Unchanged,"{'new_id': 'COOK:8200023', 'pct': 99.89}",COOK:8200023
+COOK:8200024,Unchanged,"{'new_id': 'COOK:8200024', 'pct': 99.94}",COOK:8200024
+COOK:8200025,Unchanged,"{'new_id': 'COOK:8200025', 'pct': 99.92}",COOK:8200025
+COOK:8200026,Unchanged,"{'new_id': 'COOK:8200026', 'pct': 99.96}",COOK:8200026
+COOK:8200027,Unchanged,"{'new_id': 'COOK:8200027', 'pct': 99.95}",COOK:8200027
+COOK:8200028,Unchanged,"{'new_id': 'COOK:8200028', 'pct': 99.95}",COOK:8200028
+COOK:8200029,Unchanged,"{'new_id': 'COOK:8200029', 'pct': 99.97}",COOK:8200029
+COOK:8200030,Unchanged,"{'new_id': 'COOK:8200030', 'pct': 99.94}",COOK:8200030
+COOK:8200031,Unchanged,"{'new_id': 'COOK:8200031', 'pct': 99.94}",COOK:8200031
+COOK:8200032,Unchanged,"{'new_id': 'COOK:8200032', 'pct': 99.92}",COOK:8200032
+COOK:8200033,Unchanged,"{'new_id': 'COOK:8200033', 'pct': 99.94}",COOK:8200033
+COOK:8200034,Unchanged,"{'new_id': 'COOK:8200034', 'pct': 99.9}",COOK:8200034
+COOK:8200035,Unchanged,"{'new_id': 'COOK:8200035', 'pct': 99.94}",COOK:8200035
+COOK:8200036,Unchanged,"{'new_id': 'COOK:8200036', 'pct': 99.93}",COOK:8200036
+COOK:8200037,Unchanged,"{'new_id': 'COOK:8200037', 'pct': 99.91}",COOK:8200037
+COOK:8200038,Unchanged,"{'new_id': 'COOK:8200038', 'pct': 99.97}",COOK:8200038
+COOK:8200039,Unchanged,"{'new_id': 'COOK:8200039', 'pct': 99.92}",COOK:8200039
+COOK:8200040,Unchanged,"{'new_id': 'COOK:8200040', 'pct': 99.95}",COOK:8200040
+COOK:8200041,Unchanged,"{'new_id': 'COOK:8200041', 'pct': 99.94}",COOK:8200041
+COOK:8200042,Unchanged,"{'new_id': 'COOK:8200042', 'pct': 99.97}",COOK:8200042
+COOK:8200043,Unchanged,"{'new_id': 'COOK:8200043', 'pct': 99.94}",COOK:8200043
+COOK:8200044,Unchanged,"{'new_id': 'COOK:8200044', 'pct': 99.95}",COOK:8200044
+COOK:8200045,Unchanged,"{'new_id': 'COOK:8200045', 'pct': 99.91}",COOK:8200045
+COOK:8200046,Unchanged,"{'new_id': 'COOK:8200046', 'pct': 99.96}",COOK:8200046
+COOK:8200047,Unchanged,"{'new_id': 'COOK:8200047', 'pct': 99.9}",COOK:8200047
+COOK:8200048,Unchanged,"{'new_id': 'COOK:8200048', 'pct': 99.95}",COOK:8200048
+COOK:8200049,Unchanged,"{'new_id': 'COOK:8200049', 'pct': 99.93}",COOK:8200049
+COOK:8200050,Unchanged,"{'new_id': 'COOK:8200050', 'pct': 99.96}",COOK:8200050
+COOK:8200051,Unchanged,"{'new_id': 'COOK:8200051', 'pct': 99.93}",COOK:8200051
+COOK:8200052,Unchanged,"{'new_id': 'COOK:8200052', 'pct': 99.98}",COOK:8200052
+COOK:8200053,Unchanged,"{'new_id': 'COOK:8200053', 'pct': 99.97}",COOK:8200053
+COOK:8200054,Unchanged,"{'new_id': 'COOK:8200054', 'pct': 99.9}",COOK:8200054
+COOK:8200055,Unchanged,"{'new_id': 'COOK:8200055', 'pct': 99.88}",COOK:8200055
+COOK:8200056,Unchanged,"{'new_id': 'COOK:8200056', 'pct': 99.95}",COOK:8200056
+COOK:8200057,Unchanged,"{'new_id': 'COOK:8200057', 'pct': 99.95}",COOK:8200057
+COOK:8200058,Unchanged,"{'new_id': 'COOK:8200058', 'pct': 99.94}",COOK:8200058
+COOK:8200059,Unchanged,"{'new_id': 'COOK:8200059', 'pct': 99.97}",COOK:8200059
+COOK:8200060,Unchanged,"{'new_id': 'COOK:8200060', 'pct': 99.94}",COOK:8200060
+COOK:8200061,Unchanged,"{'new_id': 'COOK:8200061', 'pct': 99.92}",COOK:8200061
+COOK:8200062,Unchanged,"{'new_id': 'COOK:8200062', 'pct': 99.94}",COOK:8200062
+COOK:8300001,SPLIT,"{'new_id': 'COOK:8300001', 'pct': 79.94}",COOK:8300001
+COOK:8300001,SPLIT,"{'new_id': 'COOK:8300001', 'pct': 7.1}",COOK:8300001
+COOK:8300001,SPLIT,"{'new_id': 'COOK:8300001', 'pct': 6.84}",COOK:8300001
+COOK:8300004,Unchanged,"{'new_id': 'COOK:8300004', 'pct': 99.97}",COOK:8300004
+COOK:8300005,Unchanged,"{'new_id': 'COOK:8300005', 'pct': 99.96}",COOK:8300005
+COOK:8300006,Unchanged,"{'new_id': 'COOK:8300006', 'pct': 99.96}",COOK:8300006
+COOK:8300007,Unchanged,"{'new_id': 'COOK:8300007', 'pct': 99.97}",COOK:8300007
+COOK:8300008,Unchanged,"{'new_id': 'COOK:8300008', 'pct': 99.9}",COOK:8300008
+COOK:8300009,Unchanged,"{'new_id': 'COOK:8300009', 'pct': 99.95}",COOK:8300009
+COOK:8300010,Unchanged,"{'new_id': 'COOK:8300010', 'pct': 99.94}",COOK:8300010
+COOK:8300012,Unchanged,"{'new_id': 'COOK:8300012', 'pct': 99.96}",COOK:8300012
+COOK:8300013,Unchanged,"{'new_id': 'COOK:8300013', 'pct': 99.88}",COOK:8300013
+COOK:8300014,Unchanged,"{'new_id': 'COOK:8300020', 'pct': 100.0}",COOK:8300020
+COOK:8300019,Unchanged,"{'new_id': 'COOK:8300019', 'pct': 99.94}",COOK:8300019
+COOK:8300020,Unchanged,"{'new_id': 'COOK:8300020', 'pct': 99.98}",COOK:8300020
+COOK:8300021,Unchanged,"{'new_id': 'COOK:8300021', 'pct': 99.96}",COOK:8300021
+COOK:8300023,Unchanged,"{'new_id': 'COOK:8300023', 'pct': 99.95}",COOK:8300023
+COOK:8300024,Unchanged,"{'new_id': 'COOK:8300024', 'pct': 99.95}",COOK:8300024
+COOK:8300025,Unchanged,"{'new_id': 'COOK:8300025', 'pct': 99.94}",COOK:8300025
+COOK:8300027,Unchanged,"{'new_id': 'COOK:8300027', 'pct': 99.98}",COOK:8300027
+COOK:8300028,Boundary Shift,"{'new_id': 'COOK:8300028', 'pct': 97.77}",COOK:8300028
+COOK:8300030,Unchanged,"{'new_id': 'COOK:8300030', 'pct': 99.96}",COOK:8300030
+COOK:8300031,Unchanged,"{'new_id': 'COOK:8300031', 'pct': 99.96}",COOK:8300031
+COOK:8300033,Unchanged,"{'new_id': 'COOK:8300033', 'pct': 99.95}",COOK:8300033
+COOK:8300034,SPLIT,"{'new_id': 'COOK:8300034', 'pct': 81.54}",COOK:8300034
+COOK:8300034,SPLIT,"{'new_id': 'COOK:8300020', 'pct': 18.46}",COOK:8300020
+COOK:8300035,Unchanged,"{'new_id': 'COOK:8300035', 'pct': 99.97}",COOK:8300035
+COOK:8300037,Unchanged,"{'new_id': 'COOK:8300037', 'pct': 99.96}",COOK:8300037
+COOK:8300038,Unchanged,"{'new_id': 'COOK:8300038', 'pct': 99.95}",COOK:8300038
+COOK:8300039,Unchanged,"{'new_id': 'COOK:8300039', 'pct': 99.99}",COOK:8300039
+COOK:8300041,Unchanged,"{'new_id': 'COOK:8300041', 'pct': 99.96}",COOK:8300041
+COOK:8300042,Unchanged,"{'new_id': 'COOK:8300042', 'pct': 99.96}",COOK:8300042
+COOK:8300043,Unchanged,"{'new_id': 'COOK:8300043', 'pct': 99.13}",COOK:8300043
+COOK:8300044,Unchanged,"{'new_id': 'COOK:8300044', 'pct': 99.93}",COOK:8300044
+COOK:8300045,Unchanged,"{'new_id': 'COOK:8300045', 'pct': 99.96}",COOK:8300045
+COOK:8300048,Unchanged,"{'new_id': 'COOK:8300048', 'pct': 99.95}",COOK:8300048
+COOK:8300049,Unchanged,"{'new_id': 'COOK:8300049', 'pct': 99.95}",COOK:8300049
+COOK:8300050,SPLIT,"{'new_id': 'COOK:8300050', 'pct': 74.54}",COOK:8300050
+COOK:8300050,SPLIT,"{'new_id': 'COOK:8300050', 'pct': 7.8}",COOK:8300050
+COOK:8300050,SPLIT,"{'new_id': 'COOK:8300050', 'pct': 6.41}",COOK:8300050
+COOK:8300050,SPLIT,"{'new_id': 'COOK:8300050', 'pct': 4.52}",COOK:8300050
+COOK:8300050,SPLIT,"{'new_id': 'COOK:8300027', 'pct': 2.67}",COOK:8300027
+COOK:8300051,Unchanged,"{'new_id': 'COOK:8300051', 'pct': 99.95}",COOK:8300051
+COOK:8300052,Unchanged,"{'new_id': 'COOK:8300052', 'pct': 99.95}",COOK:8300052
+COOK:8300053,Unchanged,"{'new_id': 'COOK:8300053', 'pct': 99.98}",COOK:8300053
+COOK:8300056,Unchanged,"{'new_id': 'COOK:8300056', 'pct': 99.96}",COOK:8300056
+COOK:8300057,Unchanged,"{'new_id': 'COOK:8300057', 'pct': 99.96}",COOK:8300057
+COOK:9600002,SPLIT,"{'new_id': 'COOK:9600002', 'pct': 97.52}",COOK:9600002
+COOK:9600002,SPLIT,"{'new_id': 'COOK:9600058', 'pct': 2.48}",COOK:9600058
+COOK:9600004,SPLIT,"{'new_id': 'COOK:9600004', 'pct': 76.32}",COOK:9600004
+COOK:9600004,SPLIT,"{'new_id': 'COOK:9600051', 'pct': 23.68}",COOK:9600051
+COOK:9600006,Unchanged,"{'new_id': 'COOK:9600006', 'pct': 99.85}",COOK:9600006
+COOK:9600008,Unchanged,"{'new_id': 'COOK:9600008', 'pct': 99.95}",COOK:9600008
+COOK:9600011,Unchanged,"{'new_id': 'COOK:9600011', 'pct': 99.98}",COOK:9600011
+COOK:9600012,Unchanged,"{'new_id': 'COOK:9600012', 'pct': 99.96}",COOK:9600012
+COOK:9600013,SPLIT,"{'new_id': 'LAKE:Vernon 290', 'pct': 81.66}",LAKE:Vernon 290
+COOK:9600013,SPLIT,"{'new_id': 'COOK:9600072', 'pct': 9.55}",COOK:9600072
+COOK:9600013,SPLIT,"{'new_id': 'COOK:9600066', 'pct': 8.72}",COOK:9600066
+COOK:9600016,Unchanged,"{'new_id': 'COOK:9600016', 'pct': 99.85}",COOK:9600016
+COOK:9600017,Unchanged,"{'new_id': 'COOK:9600017', 'pct': 99.92}",COOK:9600017
+COOK:9600021,Unchanged,"{'new_id': 'COOK:9600021', 'pct': 99.94}",COOK:9600021
+COOK:9600027,Unchanged,"{'new_id': 'COOK:9600027', 'pct': 99.93}",COOK:9600027
+COOK:9600028,Unchanged,"{'new_id': 'COOK:9600028', 'pct': 99.96}",COOK:9600028
+COOK:9600029,SPLIT,"{'new_id': 'COOK:9600029', 'pct': 68.38}",COOK:9600029
+COOK:9600029,SPLIT,"{'new_id': 'COOK:9600029', 'pct': 15.55}",COOK:9600029
+COOK:9600029,SPLIT,"{'new_id': 'COOK:9600029', 'pct': 15.0}",COOK:9600029
+COOK:9600030,Unchanged,"{'new_id': 'COOK:9600030', 'pct': 99.96}",COOK:9600030
+COOK:9600033,SPLIT,"{'new_id': 'COOK:9600033', 'pct': 61.64}",COOK:9600033
+COOK:9600033,SPLIT,"{'new_id': 'COOK:9600072', 'pct': 8.76}",COOK:9600072
+COOK:9600033,SPLIT,"{'new_id': 'COOK:9600072', 'pct': 7.94}",COOK:9600072
+COOK:9600033,SPLIT,"{'new_id': 'COOK:9600072', 'pct': 7.94}",COOK:9600072
+COOK:9600033,SPLIT,"{'new_id': 'COOK:9600033', 'pct': 6.23}",COOK:9600033
+COOK:9600033,SPLIT,"{'new_id': 'COOK:9600033', 'pct': 4.51}",COOK:9600033
+COOK:9600038,Unchanged,"{'new_id': 'COOK:9600038', 'pct': 99.95}",COOK:9600038
+COOK:9600040,Unchanged,"{'new_id': 'COOK:9600040', 'pct': 99.93}",COOK:9600040
+COOK:9600042,SPLIT,"{'new_id': 'COOK:9600042', 'pct': 82.18}",COOK:9600042
+COOK:9600042,SPLIT,"{'new_id': 'COOK:9600042', 'pct': 8.61}",COOK:9600042
+COOK:9600042,SPLIT,"{'new_id': 'COOK:9600065', 'pct': 5.77}",COOK:9600065
+COOK:9600042,SPLIT,"{'new_id': 'COOK:9600068', 'pct': 3.34}",COOK:9600068
+COOK:9600043,Unchanged,"{'new_id': 'COOK:9600043', 'pct': 99.97}",COOK:9600043
+COOK:9600044,Unchanged,"{'new_id': 'COOK:9600044', 'pct': 99.94}",COOK:9600044
+COOK:9600046,Unchanged,"{'new_id': 'COOK:9600046', 'pct': 99.83}",COOK:9600046
+COOK:9600047,SPLIT,"{'new_id': 'COOK:9600047', 'pct': 53.6}",COOK:9600047
+COOK:9600047,SPLIT,"{'new_id': 'COOK:9600047', 'pct': 46.28}",COOK:9600047
+COOK:9600048,SPLIT,"{'new_id': 'COOK:9600079', 'pct': 58.96}",COOK:9600079
+COOK:9600048,SPLIT,"{'new_id': 'COOK:9600054', 'pct': 15.78}",COOK:9600054
+COOK:9600048,SPLIT,"{'new_id': 'COOK:9600054', 'pct': 12.61}",COOK:9600054
+COOK:9600048,SPLIT,"{'new_id': 'COOK:9600054', 'pct': 8.73}",COOK:9600054
+COOK:9600048,SPLIT,"{'new_id': 'COOK:9600054', 'pct': 3.93}",COOK:9600054
+COOK:9600050,Boundary Shift,"{'new_id': 'COOK:9600079', 'pct': 98.46}",COOK:9600079
+COOK:9600051,Unchanged,"{'new_id': 'COOK:9600051', 'pct': 99.94}",COOK:9600051
+COOK:9600052,Unchanged,"{'new_id': 'COOK:9600052', 'pct': 99.95}",COOK:9600052
+COOK:9600053,Unchanged,"{'new_id': 'COOK:9600053', 'pct': 99.96}",COOK:9600053
+COOK:9600054,Unchanged,"{'new_id': 'COOK:9600054', 'pct': 99.98}",COOK:9600054
+COOK:9600055,SPLIT,"{'new_id': 'COOK:9600038', 'pct': 39.82}",COOK:9600038
+COOK:9600055,SPLIT,"{'new_id': 'COOK:9600072', 'pct': 28.14}",COOK:9600072
+COOK:9600055,SPLIT,"{'new_id': 'COOK:9600051', 'pct': 20.46}",COOK:9600051
+COOK:9600055,SPLIT,"{'new_id': 'COOK:9600038', 'pct': 11.57}",COOK:9600038
+COOK:9600056,Unchanged,"{'new_id': 'COOK:9600056', 'pct': 99.95}",COOK:9600056
+COOK:9600058,Unchanged,"{'new_id': 'COOK:9600058', 'pct': 99.94}",COOK:9600058
+COOK:9600059,SPLIT,"{'new_id': 'COOK:9600059', 'pct': 84.97}",COOK:9600059
+COOK:9600059,SPLIT,"{'new_id': 'COOK:9600068', 'pct': 15.03}",COOK:9600068
+COOK:9600060,SPLIT,"{'new_id': 'COOK:9600060', 'pct': 97.39}",COOK:9600060
+COOK:9600060,SPLIT,"{'new_id': 'COOK:9600060', 'pct': 2.0}",COOK:9600060
+COOK:9600061,SPLIT,"{'new_id': 'COOK:9600061', 'pct': 84.03}",COOK:9600061
+COOK:9600061,SPLIT,"{'new_id': 'COOK:9600061', 'pct': 15.92}",COOK:9600061
+COOK:9600063,Unchanged,"{'new_id': 'COOK:9600063', 'pct': 99.92}",COOK:9600063
+COOK:9600065,Unchanged,"{'new_id': 'COOK:9600065', 'pct': 99.96}",COOK:9600065
+COOK:9600066,Unchanged,"{'new_id': 'COOK:9600066', 'pct': 99.98}",COOK:9600066
+COOK:9600067,Unchanged,"{'new_id': 'COOK:9600067', 'pct': 99.95}",COOK:9600067
+COOK:9600068,Unchanged,"{'new_id': 'COOK:9600068', 'pct': 99.95}",COOK:9600068
+COOK:9600069,Unchanged,"{'new_id': 'COOK:9600069', 'pct': 99.95}",COOK:9600069
+COOK:9600070,Unchanged,"{'new_id': 'COOK:9600070', 'pct': 99.94}",COOK:9600070
+COOK:9600071,SPLIT,"{'new_id': 'COOK:9600071', 'pct': 95.85}",COOK:9600071
+COOK:9600071,SPLIT,"{'new_id': 'COOK:9600052', 'pct': 3.43}",COOK:9600052
+COOK:9600072,Unchanged,"{'new_id': 'COOK:9600072', 'pct': 99.89}",COOK:9600072
+COOK:9600075,Unchanged,"{'new_id': 'COOK:9600075', 'pct': 99.95}",COOK:9600075
+COOK:9600077,Unchanged,"{'new_id': 'COOK:9600077', 'pct': 99.94}",COOK:9600077
+COOK:9600078,SPLIT,"{'new_id': 'COOK:9600078', 'pct': 75.29}",COOK:9600078
+COOK:9600078,SPLIT,"{'new_id': 'COOK:9600068', 'pct': 14.85}",COOK:9600068
+COOK:9600078,SPLIT,"{'new_id': 'COOK:9600060', 'pct': 8.94}",COOK:9600060
+COOK:9600079,Unchanged,"{'new_id': 'COOK:9600079', 'pct': 99.96}",COOK:9600079
+COOK:9600080,Unchanged,"{'new_id': 'COOK:9600080', 'pct': 99.93}",COOK:9600080
+COOK:9600081,Unchanged,"{'new_id': 'LAKE:Vernon 282', 'pct': 99.32}",LAKE:Vernon 282
+KANE:DU0009,SPLIT,"{'new_id': 'KANE:DU0009', 'pct': 56.51}",KANE:DU0009
+KANE:DU0009,SPLIT,"{'new_id': 'KANE:DU0009', 'pct': 34.83}",KANE:DU0009
+KANE:DU0009,SPLIT,"{'new_id': 'KANE:DU0009', 'pct': 8.61}",KANE:DU0009
+KANE:DU0017,SPLIT,"{'new_id': 'KANE:DU0017', 'pct': 95.43}",KANE:DU0017
+KANE:DU0017,SPLIT,"{'new_id': 'MCHENRY:ALG 61', 'pct': 2.52}",MCHENRY:ALG 61
+KANE:DU0017,SPLIT,"{'new_id': 'KANE:DU0017', 'pct': 2.03}",KANE:DU0017
+KANE:DU0024,SPLIT,"{'new_id': 'KANE:DU0024', 'pct': 24.8}",KANE:DU0024
+KANE:DU0024,SPLIT,"{'new_id': 'MCHENRY:ALG 42', 'pct': 23.95}",MCHENRY:ALG 42
+KANE:DU0024,SPLIT,"{'new_id': 'KANE:DU0024', 'pct': 20.42}",KANE:DU0024
+KANE:DU0024,SPLIT,"{'new_id': 'KANE:DU0024', 'pct': 15.38}",KANE:DU0024
+KANE:DU0024,SPLIT,"{'new_id': 'KANE:DU0024', 'pct': 15.32}",KANE:DU0024
+KANE:DU0025,SPLIT,"{'new_id': 'KANE:DU0025', 'pct': 36.5}",KANE:DU0025
+KANE:DU0025,SPLIT,"{'new_id': 'MCHENRY:ALG 42', 'pct': 33.42}",MCHENRY:ALG 42
+KANE:DU0025,SPLIT,"{'new_id': 'KANE:DU0025', 'pct': 28.38}",KANE:DU0025
+KANE:DU0029,SPLIT,"{'new_id': 'KANE:DU0029', 'pct': 44.11}",KANE:DU0029
+KANE:DU0029,SPLIT,"{'new_id': 'KANE:DU0029', 'pct': 33.79}",KANE:DU0029
+KANE:DU0029,SPLIT,"{'new_id': 'KANE:DU0029', 'pct': 19.59}",KANE:DU0029
+KANE:DU0029,SPLIT,"{'new_id': 'KANE:DU0029', 'pct': 2.2}",KANE:DU0029
+KANE:DU0034,SPLIT,"{'new_id': 'KANE:DU0034', 'pct': 87.25}",KANE:DU0034
+KANE:DU0034,SPLIT,"{'new_id': 'MCHENRY:ALG 18', 'pct': 12.75}",MCHENRY:ALG 18
+KANE:DU0035,SPLIT,"{'new_id': 'KANE:DU0035', 'pct': 76.36}",KANE:DU0035
+KANE:DU0035,SPLIT,"{'new_id': 'MCHENRY:ALG 45', 'pct': 23.64}",MCHENRY:ALG 45
+LAKE:Cuba 66,Unchanged,"{'new_id': 'LAKE:Cuba 66', 'pct': 99.99}",LAKE:Cuba 66
+LAKE:Cuba 67,Unchanged,"{'new_id': 'LAKE:Cuba 67', 'pct': 99.98}",LAKE:Cuba 67
+LAKE:Cuba 68,Unchanged,"{'new_id': 'LAKE:Cuba 68', 'pct': 99.98}",LAKE:Cuba 68
+LAKE:Cuba 69,Unchanged,"{'new_id': 'LAKE:Cuba 69', 'pct': 99.97}",LAKE:Cuba 69
+LAKE:Cuba 70,Unchanged,"{'new_id': 'LAKE:Cuba 70', 'pct': 99.97}",LAKE:Cuba 70
+LAKE:Cuba 71,Unchanged,"{'new_id': 'LAKE:Cuba 71', 'pct': 99.96}",LAKE:Cuba 71
+LAKE:Cuba 72,SPLIT,"{'new_id': 'LAKE:Cuba 67', 'pct': 95.14}",LAKE:Cuba 67
+LAKE:Cuba 72,SPLIT,"{'new_id': 'LAKE:Cuba 66', 'pct': 2.6}",LAKE:Cuba 66
+LAKE:Cuba 73,SPLIT,"{'new_id': 'LAKE:Cuba 67', 'pct': 70.29}",LAKE:Cuba 67
+LAKE:Cuba 73,SPLIT,"{'new_id': 'LAKE:Cuba 67', 'pct': 21.9}",LAKE:Cuba 67
+LAKE:Cuba 73,SPLIT,"{'new_id': 'LAKE:Cuba 67', 'pct': 4.65}",LAKE:Cuba 67
+LAKE:Cuba 74,SPLIT,"{'new_id': 'LAKE:Cuba 71', 'pct': 66.8}",LAKE:Cuba 71
+LAKE:Cuba 74,SPLIT,"{'new_id': 'LAKE:Cuba 71', 'pct': 12.59}",LAKE:Cuba 71
+LAKE:Cuba 74,SPLIT,"{'new_id': 'LAKE:Cuba 69', 'pct': 11.79}",LAKE:Cuba 69
+LAKE:Cuba 74,SPLIT,"{'new_id': 'LAKE:Cuba 70', 'pct': 4.92}",LAKE:Cuba 70
+LAKE:Cuba 74,SPLIT,"{'new_id': 'LAKE:Cuba 70', 'pct': 2.76}",LAKE:Cuba 70
+LAKE:Cuba 76,SPLIT,"{'new_id': 'LAKE:Cuba 76', 'pct': 86.99}",LAKE:Cuba 76
+LAKE:Cuba 76,SPLIT,"{'new_id': 'LAKE:Cuba 76', 'pct': 13.01}",LAKE:Cuba 76
+LAKE:Ela 100,SPLIT,"{'new_id': 'LAKE:Ela 100', 'pct': 83.9}",LAKE:Ela 100
+LAKE:Ela 100,SPLIT,"{'new_id': 'LAKE:Ela 90', 'pct': 5.66}",LAKE:Ela 90
+LAKE:Ela 100,SPLIT,"{'new_id': 'LAKE:Ela 100', 'pct': 5.33}",LAKE:Ela 100
+LAKE:Ela 100,SPLIT,"{'new_id': 'LAKE:Ela 89', 'pct': 5.11}",LAKE:Ela 89
+LAKE:Ela 101,SPLIT,"{'new_id': 'LAKE:Ela 101', 'pct': 53.88}",LAKE:Ela 101
+LAKE:Ela 101,SPLIT,"{'new_id': 'LAKE:Ela 101', 'pct': 26.59}",LAKE:Ela 101
+LAKE:Ela 101,SPLIT,"{'new_id': 'LAKE:Ela 90', 'pct': 11.39}",LAKE:Ela 90
+LAKE:Ela 101,SPLIT,"{'new_id': 'LAKE:Vernon 275', 'pct': 4.35}",LAKE:Vernon 275
+LAKE:Ela 79,Unchanged,"{'new_id': 'LAKE:Ela 79', 'pct': 99.99}",LAKE:Ela 79
+LAKE:Ela 80,Unchanged,"{'new_id': 'LAKE:Ela 80', 'pct': 99.98}",LAKE:Ela 80
+LAKE:Ela 81,Unchanged,"{'new_id': 'LAKE:Ela 81', 'pct': 99.97}",LAKE:Ela 81
+LAKE:Ela 82,Unchanged,"{'new_id': 'LAKE:Ela 82', 'pct': 99.98}",LAKE:Ela 82
+LAKE:Ela 83,Unchanged,"{'new_id': 'LAKE:Ela 83', 'pct': 99.99}",LAKE:Ela 83
+LAKE:Ela 84,SPLIT,"{'new_id': 'LAKE:Ela 84', 'pct': 46.66}",LAKE:Ela 84
+LAKE:Ela 84,SPLIT,"{'new_id': 'LAKE:Ela 79', 'pct': 27.85}",LAKE:Ela 79
+LAKE:Ela 84,SPLIT,"{'new_id': 'LAKE:Ela 84', 'pct': 9.59}",LAKE:Ela 84
+LAKE:Ela 84,SPLIT,"{'new_id': 'LAKE:Ela 84', 'pct': 7.9}",LAKE:Ela 84
+LAKE:Ela 84,SPLIT,"{'new_id': 'LAKE:Ela 84', 'pct': 3.9}",LAKE:Ela 84
+LAKE:Ela 85,SPLIT,"{'new_id': 'LAKE:Ela 80', 'pct': 53.3}",LAKE:Ela 80
+LAKE:Ela 85,SPLIT,"{'new_id': 'LAKE:Ela 80', 'pct': 42.89}",LAKE:Ela 80
+LAKE:Ela 85,SPLIT,"{'new_id': 'LAKE:Ela 80', 'pct': 2.79}",LAKE:Ela 80
+LAKE:Ela 86,SPLIT,"{'new_id': 'LAKE:Ela 81', 'pct': 43.62}",LAKE:Ela 81
+LAKE:Ela 86,SPLIT,"{'new_id': 'LAKE:Ela 81', 'pct': 32.97}",LAKE:Ela 81
+LAKE:Ela 86,SPLIT,"{'new_id': 'LAKE:Ela 82', 'pct': 11.97}",LAKE:Ela 82
+LAKE:Ela 86,SPLIT,"{'new_id': 'LAKE:Ela 80', 'pct': 7.67}",LAKE:Ela 80
+LAKE:Ela 87,Unchanged,"{'new_id': 'LAKE:Ela 87', 'pct': 99.97}",LAKE:Ela 87
+LAKE:Ela 88,Unchanged,"{'new_id': 'LAKE:Ela 88', 'pct': 99.98}",LAKE:Ela 88
+LAKE:Ela 89,Unchanged,"{'new_id': 'LAKE:Ela 89', 'pct': 99.97}",LAKE:Ela 89
+LAKE:Ela 90,Unchanged,"{'new_id': 'LAKE:Ela 90', 'pct': 99.98}",LAKE:Ela 90
+LAKE:Fremont 114,SPLIT,"{'new_id': 'LAKE:Fremont 114', 'pct': 82.81}",LAKE:Fremont 114
+LAKE:Fremont 114,SPLIT,"{'new_id': 'LAKE:Fremont 114', 'pct': 8.15}",LAKE:Fremont 114
+LAKE:Fremont 114,SPLIT,"{'new_id': 'LAKE:Fremont 114', 'pct': 7.41}",LAKE:Fremont 114
+LAKE:Fremont 115,Unchanged,"{'new_id': 'LAKE:Fremont 115', 'pct': 99.99}",LAKE:Fremont 115
+LAKE:Fremont 116,SPLIT,"{'new_id': 'LAKE:Fremont 116', 'pct': 86.85}",LAKE:Fremont 116
+LAKE:Fremont 116,SPLIT,"{'new_id': 'LAKE:Fremont 116', 'pct': 11.9}",LAKE:Fremont 116
+LAKE:Fremont 117,SPLIT,"{'new_id': 'LAKE:Fremont 115', 'pct': 80.22}",LAKE:Fremont 115
+LAKE:Fremont 117,SPLIT,"{'new_id': 'LAKE:Fremont 115', 'pct': 10.82}",LAKE:Fremont 115
+LAKE:Fremont 117,SPLIT,"{'new_id': 'LAKE:Fremont 115', 'pct': 7.45}",LAKE:Fremont 115
+LAKE:Fremont 118,Unchanged,"{'new_id': 'LAKE:Fremont 118', 'pct': 99.99}",LAKE:Fremont 118
+LAKE:Fremont 123,SPLIT,"{'new_id': 'LAKE:Fremont 123', 'pct': 94.29}",LAKE:Fremont 123
+LAKE:Fremont 123,SPLIT,"{'new_id': 'LAKE:Fremont 118', 'pct': 5.67}",LAKE:Fremont 118
+LAKE:Fremont 125,SPLIT,"{'new_id': 'LAKE:Fremont 125', 'pct': 88.51}",LAKE:Fremont 125
+LAKE:Fremont 125,SPLIT,"{'new_id': 'LAKE:Fremont 125', 'pct': 5.9}",LAKE:Fremont 125
+LAKE:Fremont 125,SPLIT,"{'new_id': 'LAKE:Fremont 118', 'pct': 5.54}",LAKE:Fremont 118
+LAKE:Fremont 127,SPLIT,"{'new_id': 'LAKE:Ela 83', 'pct': 46.15}",LAKE:Ela 83
+LAKE:Fremont 127,SPLIT,"{'new_id': 'LAKE:Fremont 118', 'pct': 27.22}",LAKE:Fremont 118
+LAKE:Fremont 127,SPLIT,"{'new_id': 'LAKE:Ela 83', 'pct': 17.56}",LAKE:Ela 83
+LAKE:Fremont 127,SPLIT,"{'new_id': 'LAKE:Ela 82', 'pct': 3.49}",LAKE:Ela 82
+LAKE:Fremont 127,SPLIT,"{'new_id': 'LAKE:Fremont 118', 'pct': 3.06}",LAKE:Fremont 118
+LAKE:Vernon 256,SPLIT,"{'new_id': 'LAKE:Vernon 270', 'pct': 48.08}",LAKE:Vernon 270
+LAKE:Vernon 256,SPLIT,"{'new_id': 'LAKE:Vernon 270', 'pct': 19.56}",LAKE:Vernon 270
+LAKE:Vernon 256,SPLIT,"{'new_id': 'LAKE:Vernon 270', 'pct': 17.08}",LAKE:Vernon 270
+LAKE:Vernon 256,SPLIT,"{'new_id': 'LAKE:Vernon 270', 'pct': 14.1}",LAKE:Vernon 270
+LAKE:Vernon 270,Unchanged,"{'new_id': 'LAKE:Vernon 270', 'pct': 99.99}",LAKE:Vernon 270
+LAKE:Vernon 271,SPLIT,"{'new_id': 'LAKE:Vernon 271', 'pct': 94.36}",LAKE:Vernon 271
+LAKE:Vernon 271,SPLIT,"{'new_id': 'LAKE:Vernon 276', 'pct': 5.64}",LAKE:Vernon 276
+LAKE:Vernon 275,Unchanged,"{'new_id': 'LAKE:Vernon 275', 'pct': 99.99}",LAKE:Vernon 275
+LAKE:Vernon 276,Unchanged,"{'new_id': 'LAKE:Vernon 276', 'pct': 99.96}",LAKE:Vernon 276
+LAKE:Vernon 277,SPLIT,"{'new_id': 'LAKE:Vernon 277', 'pct': 89.89}",LAKE:Vernon 277
+LAKE:Vernon 277,SPLIT,"{'new_id': 'LAKE:Vernon 277', 'pct': 7.37}",LAKE:Vernon 277
+LAKE:Vernon 282,SPLIT,"{'new_id': 'LAKE:Vernon 282', 'pct': 68.47}",LAKE:Vernon 282
+LAKE:Vernon 282,SPLIT,"{'new_id': 'LAKE:Vernon 282', 'pct': 16.19}",LAKE:Vernon 282
+LAKE:Vernon 282,SPLIT,"{'new_id': 'LAKE:Vernon 282', 'pct': 5.01}",LAKE:Vernon 282
+LAKE:Vernon 282,SPLIT,"{'new_id': 'LAKE:Vernon 282', 'pct': 3.43}",LAKE:Vernon 282
+LAKE:Vernon 282,SPLIT,"{'new_id': 'LAKE:Vernon 282', 'pct': 3.35}",LAKE:Vernon 282
+LAKE:Vernon 282,SPLIT,"{'new_id': 'LAKE:Vernon 282', 'pct': 2.01}",LAKE:Vernon 282
+LAKE:Vernon 283,Unchanged,"{'new_id': 'LAKE:Vernon 283', 'pct': 99.96}",LAKE:Vernon 283
+LAKE:Vernon 284,Unchanged,"{'new_id': 'LAKE:Vernon 284', 'pct': 99.92}",LAKE:Vernon 284
+LAKE:Vernon 285,Unchanged,"{'new_id': 'LAKE:Vernon 285', 'pct': 99.96}",LAKE:Vernon 285
+LAKE:Vernon 286,SPLIT,"{'new_id': 'LAKE:Vernon 285', 'pct': 81.71}",LAKE:Vernon 285
+LAKE:Vernon 286,SPLIT,"{'new_id': 'LAKE:Vernon 285', 'pct': 14.11}",LAKE:Vernon 285
+LAKE:Vernon 286,SPLIT,"{'new_id': 'LAKE:Vernon 276', 'pct': 2.41}",LAKE:Vernon 276
+LAKE:Vernon 288,Unchanged,"{'new_id': 'LAKE:Vernon 288', 'pct': 99.93}",LAKE:Vernon 288
+LAKE:Vernon 289,Unchanged,"{'new_id': 'LAKE:Vernon 289', 'pct': 99.96}",LAKE:Vernon 289
+LAKE:Vernon 290,Unchanged,"{'new_id': 'LAKE:Vernon 290', 'pct': 99.92}",LAKE:Vernon 290
+LAKE:Vernon 291,SPLIT,"{'new_id': 'LAKE:Vernon 291', 'pct': 69.07}",LAKE:Vernon 291
+LAKE:Vernon 291,SPLIT,"{'new_id': 'LAKE:Vernon 289', 'pct': 29.28}",LAKE:Vernon 289
+LAKE:Vernon 293,SPLIT,"{'new_id': 'LAKE:Vernon 290', 'pct': 62.11}",LAKE:Vernon 290
+LAKE:Vernon 293,SPLIT,"{'new_id': 'LAKE:Vernon 290', 'pct': 27.13}",LAKE:Vernon 290
+LAKE:Vernon 293,SPLIT,"{'new_id': 'COOK:9600072', 'pct': 9.23}",COOK:9600072
+LAKE:Wauconda 339,SPLIT,"{'new_id': 'LAKE:Wauconda 344', 'pct': 96.41}",LAKE:Wauconda 344
+LAKE:Wauconda 339,SPLIT,"{'new_id': 'LAKE:Wauconda 344', 'pct': 3.59}",LAKE:Wauconda 344
+LAKE:Wauconda 344,Unchanged,"{'new_id': 'LAKE:Wauconda 344', 'pct': 99.98}",LAKE:Wauconda 344
+LAKE:Wauconda 345,SPLIT,"{'new_id': 'LAKE:Wauconda 345', 'pct': 33.04}",LAKE:Wauconda 345
+LAKE:Wauconda 345,SPLIT,"{'new_id': 'LAKE:Wauconda 345', 'pct': 29.81}",LAKE:Wauconda 345
+LAKE:Wauconda 345,SPLIT,"{'new_id': 'LAKE:Wauconda 345', 'pct': 12.89}",LAKE:Wauconda 345
+LAKE:Wauconda 345,SPLIT,"{'new_id': 'LAKE:Wauconda 345', 'pct': 11.93}",LAKE:Wauconda 345
+LAKE:Wauconda 345,SPLIT,"{'new_id': 'LAKE:Wauconda 346', 'pct': 3.41}",LAKE:Wauconda 346
+LAKE:Wauconda 345,SPLIT,"{'new_id': 'LAKE:Wauconda 345', 'pct': 3.11}",LAKE:Wauconda 345
+LAKE:Wauconda 346,Unchanged,"{'new_id': 'LAKE:Wauconda 346', 'pct': 99.98}",LAKE:Wauconda 346
+LAKE:Wauconda 347,Unchanged,"{'new_id': 'LAKE:Wauconda 347', 'pct': 99.98}",LAKE:Wauconda 347
+LAKE:Wauconda 348,SPLIT,"{'new_id': 'LAKE:Wauconda 348', 'pct': 94.38}",LAKE:Wauconda 348
+LAKE:Wauconda 348,SPLIT,"{'new_id': 'LAKE:Wauconda 353', 'pct': 4.56}",LAKE:Wauconda 353
+LAKE:Wauconda 350,SPLIT,"{'new_id': 'LAKE:Wauconda 350', 'pct': 67.9}",LAKE:Wauconda 350
+LAKE:Wauconda 350,SPLIT,"{'new_id': 'LAKE:Wauconda 350', 'pct': 11.58}",LAKE:Wauconda 350
+LAKE:Wauconda 350,SPLIT,"{'new_id': 'LAKE:Wauconda 350', 'pct': 11.5}",LAKE:Wauconda 350
+LAKE:Wauconda 350,SPLIT,"{'new_id': 'LAKE:Wauconda 350', 'pct': 5.2}",LAKE:Wauconda 350
+LAKE:Wauconda 351,SPLIT,"{'new_id': 'LAKE:Fremont 115', 'pct': 51.97}",LAKE:Fremont 115
+LAKE:Wauconda 351,SPLIT,"{'new_id': 'LAKE:Wauconda 354', 'pct': 46.14}",LAKE:Wauconda 354
+LAKE:Wauconda 353,Unchanged,"{'new_id': 'LAKE:Wauconda 353', 'pct': 99.96}",LAKE:Wauconda 353
+LAKE:Wauconda 354,Unchanged,"{'new_id': 'LAKE:Wauconda 354', 'pct': 99.98}",LAKE:Wauconda 354
+MCHENRY:ALG 1,Unchanged,"{'new_id': 'MCHENRY:ALG 1', 'pct': 99.98}",MCHENRY:ALG 1
+MCHENRY:ALG 10,Unchanged,"{'new_id': 'MCHENRY:ALG 10', 'pct': 99.98}",MCHENRY:ALG 10
+MCHENRY:ALG 11,Unchanged,"{'new_id': 'MCHENRY:ALG 11', 'pct': 99.91}",MCHENRY:ALG 11
+MCHENRY:ALG 12,Unchanged,"{'new_id': 'MCHENRY:ALG 12', 'pct': 99.97}",MCHENRY:ALG 12
+MCHENRY:ALG 13,Unchanged,"{'new_id': 'MCHENRY:ALG 13', 'pct': 99.96}",MCHENRY:ALG 13
+MCHENRY:ALG 14,Unchanged,"{'new_id': 'MCHENRY:ALG 14', 'pct': 99.95}",MCHENRY:ALG 14
+MCHENRY:ALG 15,Unchanged,"{'new_id': 'MCHENRY:ALG 15', 'pct': 99.97}",MCHENRY:ALG 15
+MCHENRY:ALG 16,Unchanged,"{'new_id': 'MCHENRY:ALG 16', 'pct': 99.95}",MCHENRY:ALG 16
+MCHENRY:ALG 17,Unchanged,"{'new_id': 'MCHENRY:ALG 17', 'pct': 99.96}",MCHENRY:ALG 17
+MCHENRY:ALG 18,Unchanged,"{'new_id': 'MCHENRY:ALG 18', 'pct': 99.96}",MCHENRY:ALG 18
+MCHENRY:ALG 19,Unchanged,"{'new_id': 'MCHENRY:ALG 19', 'pct': 99.95}",MCHENRY:ALG 19
+MCHENRY:ALG 2,Unchanged,"{'new_id': 'MCHENRY:ALG 2', 'pct': 99.95}",MCHENRY:ALG 2
+MCHENRY:ALG 20,Unchanged,"{'new_id': 'MCHENRY:ALG 20', 'pct': 99.97}",MCHENRY:ALG 20
+MCHENRY:ALG 21,Unchanged,"{'new_id': 'MCHENRY:ALG 21', 'pct': 99.97}",MCHENRY:ALG 21
+MCHENRY:ALG 22,Unchanged,"{'new_id': 'MCHENRY:ALG 22', 'pct': 99.95}",MCHENRY:ALG 22
+MCHENRY:ALG 23,Unchanged,"{'new_id': 'MCHENRY:ALG 23', 'pct': 99.97}",MCHENRY:ALG 23
+MCHENRY:ALG 24,Unchanged,"{'new_id': 'MCHENRY:ALG 24', 'pct': 99.94}",MCHENRY:ALG 24
+MCHENRY:ALG 25,Unchanged,"{'new_id': 'MCHENRY:ALG 25', 'pct': 99.96}",MCHENRY:ALG 25
+MCHENRY:ALG 26,Unchanged,"{'new_id': 'MCHENRY:ALG 26', 'pct': 99.96}",MCHENRY:ALG 26
+MCHENRY:ALG 27,Unchanged,"{'new_id': 'MCHENRY:ALG 27', 'pct': 99.98}",MCHENRY:ALG 27
+MCHENRY:ALG 28,Unchanged,"{'new_id': 'MCHENRY:ALG 28', 'pct': 99.98}",MCHENRY:ALG 28
+MCHENRY:ALG 29,Unchanged,"{'new_id': 'MCHENRY:ALG 29', 'pct': 99.93}",MCHENRY:ALG 29
+MCHENRY:ALG 3,Unchanged,"{'new_id': 'MCHENRY:ALG 3', 'pct': 99.96}",MCHENRY:ALG 3
+MCHENRY:ALG 30,Unchanged,"{'new_id': 'MCHENRY:ALG 30', 'pct': 99.96}",MCHENRY:ALG 30
+MCHENRY:ALG 31,Unchanged,"{'new_id': 'MCHENRY:ALG 31', 'pct': 99.97}",MCHENRY:ALG 31
+MCHENRY:ALG 32,Unchanged,"{'new_id': 'MCHENRY:ALG 32', 'pct': 99.98}",MCHENRY:ALG 32
+MCHENRY:ALG 33,Unchanged,"{'new_id': 'MCHENRY:ALG 33', 'pct': 99.98}",MCHENRY:ALG 33
+MCHENRY:ALG 34,Unchanged,"{'new_id': 'MCHENRY:ALG 34', 'pct': 99.98}",MCHENRY:ALG 34
+MCHENRY:ALG 35,Unchanged,"{'new_id': 'MCHENRY:ALG 35', 'pct': 99.96}",MCHENRY:ALG 35
+MCHENRY:ALG 36,Unchanged,"{'new_id': 'MCHENRY:ALG 36', 'pct': 99.97}",MCHENRY:ALG 36
+MCHENRY:ALG 37,Unchanged,"{'new_id': 'MCHENRY:ALG 37', 'pct': 99.98}",MCHENRY:ALG 37
+MCHENRY:ALG 38,Unchanged,"{'new_id': 'MCHENRY:ALG 38', 'pct': 99.97}",MCHENRY:ALG 38
+MCHENRY:ALG 39,Unchanged,"{'new_id': 'MCHENRY:ALG 39', 'pct': 99.95}",MCHENRY:ALG 39
+MCHENRY:ALG 4,Unchanged,"{'new_id': 'MCHENRY:ALG 4', 'pct': 99.94}",MCHENRY:ALG 4
+MCHENRY:ALG 40,Unchanged,"{'new_id': 'MCHENRY:ALG 40', 'pct': 99.93}",MCHENRY:ALG 40
+MCHENRY:ALG 41,Unchanged,"{'new_id': 'MCHENRY:ALG 41', 'pct': 99.96}",MCHENRY:ALG 41
+MCHENRY:ALG 42,Unchanged,"{'new_id': 'MCHENRY:ALG 42', 'pct': 99.89}",MCHENRY:ALG 42
+MCHENRY:ALG 43,Unchanged,"{'new_id': 'MCHENRY:ALG 43', 'pct': 99.97}",MCHENRY:ALG 43
+MCHENRY:ALG 44,Unchanged,"{'new_id': 'MCHENRY:ALG 44', 'pct': 99.95}",MCHENRY:ALG 44
+MCHENRY:ALG 45,Unchanged,"{'new_id': 'MCHENRY:ALG 45', 'pct': 99.95}",MCHENRY:ALG 45
+MCHENRY:ALG 46,Unchanged,"{'new_id': 'MCHENRY:ALG 46', 'pct': 99.94}",MCHENRY:ALG 46
+MCHENRY:ALG 47,Unchanged,"{'new_id': 'MCHENRY:ALG 47', 'pct': 99.98}",MCHENRY:ALG 47
+MCHENRY:ALG 48,Unchanged,"{'new_id': 'MCHENRY:ALG 48', 'pct': 99.95}",MCHENRY:ALG 48
+MCHENRY:ALG 49,Unchanged,"{'new_id': 'MCHENRY:ALG 49', 'pct': 99.97}",MCHENRY:ALG 49
+MCHENRY:ALG 5,Unchanged,"{'new_id': 'MCHENRY:ALG 5', 'pct': 99.97}",MCHENRY:ALG 5
+MCHENRY:ALG 50,Unchanged,"{'new_id': 'MCHENRY:ALG 50', 'pct': 99.91}",MCHENRY:ALG 50
+MCHENRY:ALG 51,Unchanged,"{'new_id': 'MCHENRY:ALG 51', 'pct': 99.91}",MCHENRY:ALG 51
+MCHENRY:ALG 52,Unchanged,"{'new_id': 'MCHENRY:ALG 52', 'pct': 99.95}",MCHENRY:ALG 52
+MCHENRY:ALG 53,Unchanged,"{'new_id': 'MCHENRY:ALG 53', 'pct': 99.98}",MCHENRY:ALG 53
+MCHENRY:ALG 54,Unchanged,"{'new_id': 'MCHENRY:ALG 54', 'pct': 99.97}",MCHENRY:ALG 54
+MCHENRY:ALG 55,Unchanged,"{'new_id': 'MCHENRY:ALG 55', 'pct': 99.94}",MCHENRY:ALG 55
+MCHENRY:ALG 56,Unchanged,"{'new_id': 'MCHENRY:ALG 56', 'pct': 99.95}",MCHENRY:ALG 56
+MCHENRY:ALG 57,Unchanged,"{'new_id': 'MCHENRY:ALG 57', 'pct': 99.95}",MCHENRY:ALG 57
+MCHENRY:ALG 58,Unchanged,"{'new_id': 'MCHENRY:ALG 58', 'pct': 99.95}",MCHENRY:ALG 58
+MCHENRY:ALG 59,Unchanged,"{'new_id': 'MCHENRY:ALG 59', 'pct': 99.98}",MCHENRY:ALG 59
+MCHENRY:ALG 6,Unchanged,"{'new_id': 'MCHENRY:ALG 6', 'pct': 99.92}",MCHENRY:ALG 6
+MCHENRY:ALG 60,Unchanged,"{'new_id': 'MCHENRY:ALG 60', 'pct': 99.99}",MCHENRY:ALG 60
+MCHENRY:ALG 61,Unchanged,"{'new_id': 'MCHENRY:ALG 61', 'pct': 99.95}",MCHENRY:ALG 61
+MCHENRY:ALG 62,Unchanged,"{'new_id': 'MCHENRY:ALG 62', 'pct': 99.97}",MCHENRY:ALG 62
+MCHENRY:ALG 63,Unchanged,"{'new_id': 'MCHENRY:ALG 63', 'pct': 99.97}",MCHENRY:ALG 63
+MCHENRY:ALG 7,Unchanged,"{'new_id': 'MCHENRY:ALG 7', 'pct': 99.95}",MCHENRY:ALG 7
+MCHENRY:ALG 8,Unchanged,"{'new_id': 'MCHENRY:ALG 8', 'pct': 99.94}",MCHENRY:ALG 8
+MCHENRY:ALG 9,Unchanged,"{'new_id': 'MCHENRY:ALG 9', 'pct': 99.94}",MCHENRY:ALG 9
+MCHENRY:GRA 17,Unchanged,"{'new_id': 'MCHENRY:ALG 18', 'pct': 99.49}",MCHENRY:ALG 18
+MCHENRY:GRA 2,Unchanged,"{'new_id': 'MCHENRY:GRA 2', 'pct': 99.12}",MCHENRY:GRA 2
+MCHENRY:GRA 3,SPLIT,"{'new_id': 'MCHENRY:GRA 3', 'pct': 96.78}",MCHENRY:GRA 3
+MCHENRY:GRA 3,SPLIT,"{'new_id': 'MCHENRY:ALG 1', 'pct': 3.14}",MCHENRY:ALG 1
+MCHENRY:GRA 30,SPLIT,"{'new_id': 'MCHENRY:ALG 15', 'pct': 69.94}",MCHENRY:ALG 15
+MCHENRY:GRA 30,SPLIT,"{'new_id': 'MCHENRY:GRA 30', 'pct': 30.06}",MCHENRY:GRA 30
+MCHENRY:GRA 31,SPLIT,"{'new_id': 'MCHENRY:ALG 11', 'pct': 43.18}",MCHENRY:ALG 11
+MCHENRY:GRA 31,SPLIT,"{'new_id': 'MCHENRY:GRA 31', 'pct': 38.55}",MCHENRY:GRA 31
+MCHENRY:GRA 31,SPLIT,"{'new_id': 'MCHENRY:GRA 31', 'pct': 12.6}",MCHENRY:GRA 31
+MCHENRY:GRA 31,SPLIT,"{'new_id': 'MCHENRY:GRA 31', 'pct': 4.35}",MCHENRY:GRA 31
+MCHENRY:GRA 7,SPLIT,"{'new_id': 'MCHENRY:GRA 7', 'pct': 97.23}",MCHENRY:GRA 7
+MCHENRY:GRA 7,SPLIT,"{'new_id': 'MCHENRY:ALG 3', 'pct': 2.01}",MCHENRY:ALG 3
+MCHENRY:GRA 8,SPLIT,"{'new_id': 'MCHENRY:GRA 8', 'pct': 89.81}",MCHENRY:GRA 8
+MCHENRY:GRA 8,SPLIT,"{'new_id': 'MCHENRY:ALG 12', 'pct': 10.19}",MCHENRY:ALG 12
+MCHENRY:NUN 15,Unchanged,"{'new_id': 'MCHENRY:ALG 33', 'pct': 100.0}",MCHENRY:ALG 33
+MCHENRY:NUN 16,Unchanged,"{'new_id': 'MCHENRY:ALG 33', 'pct': 100.0}",MCHENRY:ALG 33
+MCHENRY:NUN 17,SPLIT,"{'new_id': 'MCHENRY:ALG 28', 'pct': 46.83}",MCHENRY:ALG 28
+MCHENRY:NUN 17,SPLIT,"{'new_id': 'MCHENRY:ALG 1', 'pct': 44.61}",MCHENRY:ALG 1
+MCHENRY:NUN 17,SPLIT,"{'new_id': 'MCHENRY:ALG 2', 'pct': 8.56}",MCHENRY:ALG 2
+MCHENRY:NUN 18,SPLIT,"{'new_id': 'MCHENRY:ALG 1', 'pct': 44.55}",MCHENRY:ALG 1
+MCHENRY:NUN 18,SPLIT,"{'new_id': 'MCHENRY:NUN 18', 'pct': 28.53}",MCHENRY:NUN 18
+MCHENRY:NUN 18,SPLIT,"{'new_id': 'MCHENRY:NUN 18', 'pct': 26.25}",MCHENRY:NUN 18
+MCHENRY:NUN 19,SPLIT,"{'new_id': 'MCHENRY:NUN 19', 'pct': 96.03}",MCHENRY:NUN 19
+MCHENRY:NUN 19,SPLIT,"{'new_id': 'MCHENRY:ALG 41', 'pct': 3.97}",MCHENRY:ALG 41
+MCHENRY:NUN 20,SPLIT,"{'new_id': 'MCHENRY:NUN 20', 'pct': 97.25}",MCHENRY:NUN 20
+MCHENRY:NUN 20,SPLIT,"{'new_id': 'MCHENRY:ALG 37', 'pct': 2.75}",MCHENRY:ALG 37
+MCHENRY:NUN 21,Unchanged,"{'new_id': 'MCHENRY:ALG 37', 'pct': 99.47}",MCHENRY:ALG 37
+MCHENRY:NUN 22,Unchanged,"{'new_id': 'MCHENRY:NUN 27', 'pct': 100.0}",MCHENRY:NUN 27
+MCHENRY:NUN 27,SPLIT,"{'new_id': 'MCHENRY:NUN 27', 'pct': 60.4}",MCHENRY:NUN 27
+MCHENRY:NUN 27,SPLIT,"{'new_id': 'MCHENRY:NUN 27', 'pct': 28.2}",MCHENRY:NUN 27
+MCHENRY:NUN 27,SPLIT,"{'new_id': 'MCHENRY:NUN 27', 'pct': 11.41}",MCHENRY:NUN 27
